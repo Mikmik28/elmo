@@ -98,6 +98,7 @@ If migrating to RSpec, follow patterns from `docs/elmo-plan.md` section 11.
 6. **Use domain language** from `docs/elmo-plan.md` for financial features
 7. **Consider multi-database setup** when suggesting migrations
 8. **Default to secure, production-ready patterns**
+9. **Always test locally before pushing** - run `bin/rails test` to verify all tests pass before committing and pushing changes
 
 ## Domain-Specific Patterns
 

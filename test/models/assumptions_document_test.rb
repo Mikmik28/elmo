@@ -19,7 +19,7 @@ class AssumptionsDocumentTest < ActiveSupport::TestCase
     assert_includes content, "PostgreSQL 16+", "Should document PostgreSQL version requirement"
     assert_includes content, "UTC", "Should document UTC storage for timestamps"
     assert_includes content, "Asia/Manila", "Should document default timezone"
-    assert_includes content, "decimal(18,4)", "Should document money storage format"
+    assert_includes content, "integer", "Should document money storage format"
     assert_includes content, "Banker's rounding", "Should document rounding method"
     assert_includes content, "Idempotency-Key", "Should document idempotency requirement"
     assert_includes content, "outbox_events", "Should document outbox pattern"
