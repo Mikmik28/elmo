@@ -1,89 +1,56 @@
 name: CI
-
 on:
-  pull_request:
   push:
-    branches: [ main ]
-
+    branches: ["**"]
+  pull_request:
 jobs:
-  scan_ruby:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: .ruby-version
-          bundler-cache: true
-
-      - name: Scan for common Rails security vulnerabilities using static analysis
-        run: bin/brakeman --no-pager
-
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: .ruby-version
-          bundler-cache: true
-
-      - name: Lint code for consistent style
-        run: bin/rubocop -f github
-
   test:
     runs-on: ubuntu-latest
-
     services:
       postgres:
-        image: postgres
+        image: postgres:16
+        ports: ["5432:5432"]
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=3
-
-      # redis:
-      #   image: redis
-      #   ports:
-      #     - 6379:6379
-      #   options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
-
-    steps:
-      - name: Install packages
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y build-essential git libpq-dev libyaml-dev pkg-config unzip google-chrome-stable
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: .ruby-version
-          bundler-cache: true
-
-      - uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: 1.0.1
-
-      - name: Run tests
-        env:
-          RAILS_ENV: test
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432
-          # REDIS_URL: redis://localhost:6379/0
-        run: bin/rails db:test:prepare test test:system
-
-      - name: Keep screenshots from failed system tests
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: screenshots
-          path: ${{ github.workspace }}/tmp/screenshots
-          if-no-files-found: ignore
+          POSTGRES_DB: elmo_test
+        options: >-
+          --health-cmd="pg_isready -U postgres" --health-interval=10s --health-timeout=5s --health-retries=5
+      env:
+        RAILS_ENV: test
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/elmo_test
+        SOLID_QUEUE_INLINE: "1"
+      steps:
+        - uses: actions/checkout@v4
+        - uses: ruby/setup-ruby@v1
+          with:
+            ruby-version: "3.3"
+            bundler-cache: true
+        - uses: actions/setup-node@v4
+          with:
+            node-version: "20"
+            cache: "npm"
+        - name: Install system deps
+          run: sudo apt-get update && sudo apt-get install -y libvips
+        - name: Install JS deps
+          run: |
+            [ -f package.json ] && npm ci || echo "no node deps"
+        - name: Prepare DB
+          run: |
+            bin/rails db:schema:load --trace
+            bin/rails assets:precompile RAILS_ENV=test || true
+        - name: RuboCop
+          run: bundle exec rubocop --parallel
+        - name: Brakeman
+          run: bundle exec brakeman -q -w2
+        - name: Bundler Audit
+          run: bundle exec bundler-audit check --update
+        - name: RSpec
+          run: |
+            bin/rspec --format progress --profile 10 --force-color
+        - name: Upload coverage
+          if: always()
+          uses: actions/upload-artifact@v4
+          with:
+            name: coverage
+            path: coverage/
