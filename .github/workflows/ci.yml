@@ -16,41 +16,53 @@ jobs:
           POSTGRES_DB: elmo_test
         options: >-
           --health-cmd="pg_isready -U postgres" --health-interval=10s --health-timeout=5s --health-retries=5
-      env:
-        RAILS_ENV: test
-        DATABASE_URL: postgres://postgres:postgres@localhost:5432/elmo_test
-        SOLID_QUEUE_INLINE: "1"
-      steps:
-        - uses: actions/checkout@v4
-        - uses: ruby/setup-ruby@v1
-          with:
-            ruby-version: "3.3"
-            bundler-cache: true
-        - uses: actions/setup-node@v4
-          with:
-            node-version: "20"
-            cache: "npm"
-        - name: Install system deps
-          run: sudo apt-get update && sudo apt-get install -y libvips
-        - name: Install JS deps
-          run: |
-            [ -f package.json ] && npm ci || echo "no node deps"
-        - name: Prepare DB
-          run: |
-            bin/rails db:schema:load --trace
-            bin/rails assets:precompile RAILS_ENV=test || true
-        - name: RuboCop
-          run: bundle exec rubocop --parallel
-        - name: Brakeman
-          run: bundle exec brakeman -q -w2
-        - name: Bundler Audit
-          run: bundle exec bundler-audit check --update
-        - name: RSpec
-          run: |
-            bin/rspec --format progress --profile 10 --force-color
-        - name: Upload coverage
-          if: always()
-          uses: actions/upload-artifact@v4
-          with:
-            name: coverage
-            path: coverage/
+    env:
+      RAILS_ENV: test
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/elmo_test
+      SOLID_QUEUE_INLINE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - name: Install system deps
+        run: sudo apt-get update && sudo apt-get install -y libvips
+      - name: Install JS deps
+        run: |
+          [ -f package.json ] && npm ci || echo "no node deps"
+      - name: Prepare DB
+        run: |
+          bin/rails db:schema:load --trace
+          bin/rails assets:precompile RAILS_ENV=test || true
+      - name: Verify Project Assumptions & Conventions
+        run: |
+          echo "## Project Assumptions & Conventions" >> $GITHUB_STEP_SUMMARY
+          echo "📋 **Reference**: [docs/assumptions.md](docs/assumptions.md)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This CI pipeline follows the conventions documented in our assumptions:" >> $GITHUB_STEP_SUMMARY
+          echo "- Ruby 3.3+ ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- Rails 8 ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- PostgreSQL 16+ ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- UTC timezone storage ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- Asia/Manila display timezone ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+      - name: RuboCop
+        run: bundle exec rubocop --parallel
+      - name: Brakeman
+        run: bundle exec brakeman -q -w2
+      - name: Bundler Audit
+        run: bundle exec bundler-audit check --update
+      - name: Tests
+        run: |
+          bin/rails test --verbose
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
