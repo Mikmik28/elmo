@@ -1,8 +1,6 @@
 require "test_helper"
 
 class AssumptionsDocumentTest < ActiveSupport::TestCase
-  self.use_transactional_tests = false
-
   test "assumptions document exists and contains key statements" do
     assumptions_path = Rails.root.join("docs", "assumptions.md")
 
