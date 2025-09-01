@@ -36,7 +36,7 @@ eLMo is a monolithic Rails 8 application designed for micro-lending operations w
 
 ## Requirements
 
-- **Ruby**: 3.3+ (see `.ruby-version`)
+- **Ruby**: 3.4.3+ (see `.ruby-version`)
 - **Rails**: 8.x
 - **PostgreSQL**: 16+
 - **Node.js**: For asset compilation (Bun)
@@ -71,6 +71,7 @@ bin/dev  # Starts Rails server, JS bundler, CSS compiler
 ```
 
 This uses Foreman with `Procfile.dev` to run:
+
 - Rails server on port 3000
 - Bun for JavaScript bundling (watch mode)
 - Tailwind CSS compilation (watch mode)
@@ -109,9 +110,9 @@ Multi-database configuration for production scaling:
 # config/database.yml
 production:
   primary: # Main application data
-  cache:   # Solid Cache
-  queue:   # Solid Queue
-  cable:   # Solid Cable
+  cache: # Solid Cache
+  queue: # Solid Queue
+  cable: # Solid Cable
 ```
 
 ### Migrations
@@ -149,10 +150,11 @@ See `config/deploy.yml` for deployment configuration.
 eLMo focuses on micro-lending with three product tiers:
 
 - **Micro**: ≤60 days, small amounts
-- **Extended**: 61-180 days, moderate amounts  
+- **Extended**: 61-180 days, moderate amounts
 - **Long-term**: 270/365 days only, larger amounts
 
 Key features:
+
 - KYC verification and credit scoring
 - Automated loan processing and disbursement
 - Payment tracking and collections

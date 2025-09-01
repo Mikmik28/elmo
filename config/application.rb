@@ -23,10 +23,10 @@ module Elmo
     #
     # Timezone configuration for eLMo fintech application
     config.time_zone = "Asia/Manila"  # Display timezone for Philippine market
-    
+
     # ActiveRecord stores timestamps in UTC (database storage)
     config.active_record.default_timezone = :utc
-    
+
     # config.eager_load_paths << Rails.root.join("extras")
   end
 end
