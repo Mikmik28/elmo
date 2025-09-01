@@ -2,11 +2,8 @@ name: CI
 on:
   push:
     branches: ["**"]
-  pull_          echo "- Ruby 3.4.3 ✅" >> $GITHUB_STEP_SUMMARY
-          echo "- Rails 8 ✅" >> $GITHUB_STEP_SUMMARY
-          echo "- PostgreSQL 16+ ✅" >> $GITHUB_STEP_SUMMARY
-          echo "- Bun for JavaScript bundling ✅" >> $GITHUB_STEP_SUMMARY
-          echo "- UTC timezone storage ✅" >> $GITHUB_STEP_SUMMARYest:
+  pull_request:
+    branches: ["**"]
 jobs:
   test:
     runs-on: ubuntu-latest
