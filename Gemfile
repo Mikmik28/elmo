@@ -1,5 +1,7 @@
 source "https://rubygems.org"
 
+ruby "3.4.3"
+
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 8.0.2", ">= 8.0.2.1"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
@@ -47,6 +49,9 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  # Bundler audit for security vulnerabilities in dependencies
+  gem "bundler-audit", require: false
 end
 
 group :development do

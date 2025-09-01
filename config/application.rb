@@ -21,7 +21,12 @@ module Elmo
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
     #
-    # config.time_zone = "Central Time (US & Canada)"
+    # Timezone configuration for eLMo fintech application
+    config.time_zone = "Asia/Manila"  # Display timezone for Philippine market
+
+    # ActiveRecord stores timestamps in UTC (database storage)
+    config.active_record.default_timezone = :utc
+
     # config.eager_load_paths << Rails.root.join("extras")
   end
 end
