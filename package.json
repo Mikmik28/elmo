@@ -3,9 +3,9 @@
   "private": true,
   "scripts": {
     "build": "bun bun.config.js",
-    "build:css": "bun x @tailwindcss/cli -i ./app/assets/stylesheets/application.tailwind.css -o ./app/assets/builds/application.css --minify"
+    "build:css": "npx tailwindcss -i ./app/assets/stylesheets/application.tailwind.css -o ./app/assets/builds/application.css --minify"
   },
   "devDependencies": {
-    "@tailwindcss/cli": "^0.1.2"
+    "tailwindcss": "^3.4.13"
   }
 }
