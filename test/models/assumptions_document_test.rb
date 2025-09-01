@@ -1,10 +1,7 @@
 require "test_helper"
 
 class AssumptionsDocumentTest < ActiveSupport::TestCase
-  def setup
-    # Skip database tests for this simple document verification
-    self.use_transactional_tests = false
-  end
+  self.use_transactional_tests = false
 
   test "assumptions document exists and contains key statements" do
     assumptions_path = Rails.root.join("docs", "assumptions.md")
