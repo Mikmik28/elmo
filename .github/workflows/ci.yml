@@ -68,7 +68,7 @@ jobs:
         run: bundle exec brakeman -q -w2
       - name: Bundler Audit
         run: bundle exec bundler-audit check --update
-      - name: Tests
+      - name: Rails Tests
         run: |
           bin/rails test --verbose
       - name: Upload coverage

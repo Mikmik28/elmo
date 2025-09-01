@@ -31,10 +31,10 @@ This document outlines the core assumptions and conventions for the eLMo (Loan M
 
 ### Money Storage & Precision
 
-- **Data Type**: `decimal(18,4)` for monetary values
+- **Data Type**: `integer` for monetary values (stored in cents)
 - **Currency**: Primarily Philippine Peso (PHP)
-- **Storage**: Monetary values stored in their base unit (not cents)
-- **Precision**: 4 decimal places for accurate financial calculations
+- **Storage**: Monetary values stored in cents (integer)
+- **Precision**: Calculations should use 4 decimal places for accuracy (use `BigDecimal` for all financial calculations)
 
 ### Rounding & Calculations
 
