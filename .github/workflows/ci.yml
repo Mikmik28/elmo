@@ -70,7 +70,7 @@ jobs:
         run: bundle exec bundler-audit check --update
       - name: Rails Tests
         run: |
-          bin/rails test --verbose
+          bundle exec rspec --verbose
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@v4
