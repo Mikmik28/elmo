@@ -17,6 +17,18 @@ gem "cssbundling-rails"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
 
+# Authentication solution for Rails [https://github.com/plataformatec/devise]
+gem "devise"
+
+# Object oriented authorization for Rails [https://github.com/elabs/pundit]
+gem "pundit"
+
+# Search functionality using PostgreSQL full text search [https://github.com/Casecommons/pg_search]
+gem "pg_search"
+
+# Model annotation for Rails [https://github.com/ctran/annotate_models]
+gem "annotate"
+
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
 
@@ -52,6 +64,15 @@ group :development, :test do
 
   # Bundler audit for security vulnerabilities in dependencies
   gem "bundler-audit", require: false
+
+  # RSpec testing framework for Rails [https://github.com/rspec/rspec-rails]
+  gem "rspec-rails"
+
+  # Factory library for setting up Ruby objects as test data [https://github.com/thoughtbot/factory_bot_rails]
+  gem "factory_bot_rails"
+
+  # Database cleaner strategies for cleaning database in tests [https://github.com/DatabaseCleaner/database_cleaner]
+  gem "database_cleaner-active_record"
 end
 
 group :development do
