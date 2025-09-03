@@ -41,6 +41,11 @@ RSpec.configure do |config|
   # Factory Bot configuration
   config.include FactoryBot::Syntax::Methods
 
+  # Devise test helpers
+  config.include Devise::Test::ControllerHelpers, type: :controller
+  config.include Devise::Test::IntegrationHelpers, type: :request
+  config.include Devise::Test::IntegrationHelpers, type: :system
+
   # Database Cleaner configuration
   config.before(:suite) do
     DatabaseCleaner.strategy = :transaction

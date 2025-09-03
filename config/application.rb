@@ -27,6 +27,13 @@ module Elmo
     # ActiveRecord stores timestamps in UTC (database storage)
     config.active_record.default_timezone = :utc
 
+    config.generators do |g|
+      g.orm :active_record, primary_key_type: :uuid
+    end
+
+    # Enable Rack::Attack for rate limiting
+    config.middleware.use Rack::Attack
+
     # config.eager_load_paths << Rails.root.join("extras")
   end
 end

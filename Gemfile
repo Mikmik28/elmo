@@ -23,11 +23,14 @@ gem "devise"
 # Object oriented authorization for Rails [https://github.com/elabs/pundit]
 gem "pundit"
 
+# Rack middleware for blocking & throttling abusive requests [https://github.com/rack/rack-attack]
+gem "rack-attack"
+
 # Search functionality using PostgreSQL full text search [https://github.com/Casecommons/pg_search]
 gem "pg_search"
 
-# Model annotation for Rails [https://github.com/ctran/annotate_models]
-gem "annotate"
+# Model annotation for Rails [https://github.com/drwl/annotaterb]
+gem "annotaterb"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
