@@ -20,6 +20,15 @@ gem "jbuilder"
 # Authentication solution for Rails [https://github.com/plataformatec/devise]
 gem "devise"
 
+# Two-Factor Authentication
+gem "devise-two-factor"
+
+# For TOTP generation and verification [https://github.com/mdp/rotp]
+gem "rotp"
+
+# For QR code generation [https://github.com/whomwah/rqrcode]
+gem "rqrcode"
+
 # Object oriented authorization for Rails [https://github.com/elabs/pundit]
 gem "pundit"
 
