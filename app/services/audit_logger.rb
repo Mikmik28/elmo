@@ -47,4 +47,13 @@ class AuditLogger
   def self.log_account_locked(user, request)
     log_authentication_event("account_locked", user, request)
   end
+
+  def self.log(event_type, user, additional_data = {})
+    request_data = {
+      ip_address: additional_data[:ip_address],
+      user_agent: additional_data[:user_agent]
+    }
+
+    log_authentication_event(event_type, user, nil, additional_data.merge(request_data))
+  end
 end

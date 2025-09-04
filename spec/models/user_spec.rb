@@ -2,29 +2,39 @@
 #
 # Table name: users
 #
-#  id                     :uuid             not null, primary key
-#  confirmation_sent_at   :datetime
-#  confirmation_token     :string
-#  confirmed_at           :datetime
-#  email                  :string           default(""), not null
-#  encrypted_password     :string           default(""), not null
-#  failed_attempts        :integer          default(0), not null
-#  locked_at              :datetime
-#  phone                  :string
-#  remember_created_at    :datetime
-#  reset_password_sent_at :datetime
-#  reset_password_token   :string
-#  unconfirmed_email      :string
-#  unlock_token           :string
-#  created_at             :datetime         not null
-#  updated_at             :datetime         not null
+#  id                        :uuid             not null, primary key
+#  confirmation_sent_at      :datetime
+#  confirmation_token        :string
+#  confirmed_at              :datetime
+#  consumed_timestep         :integer
+#  email                     :string           default(""), not null
+#  encrypted_otp_secret      :string
+#  encrypted_otp_secret_iv   :string
+#  encrypted_otp_secret_salt :string
+#  encrypted_password        :string           default(""), not null
+#  failed_attempts           :integer          default(0), not null
+#  last_sign_in_with_otp     :datetime
+#  locked_at                 :datetime
+#  otp_backup_codes          :text
+#  otp_required_for_login    :boolean          default(FALSE), not null
+#  phone                     :string
+#  remember_created_at       :datetime
+#  reset_password_sent_at    :datetime
+#  reset_password_token      :string
+#  role                      :string           default("user"), not null
+#  unconfirmed_email         :string
+#  unlock_token              :string
+#  created_at                :datetime         not null
+#  updated_at                :datetime         not null
 #
 # Indexes
 #
-#  index_users_on_confirmation_token    (confirmation_token) UNIQUE
-#  index_users_on_email                 (email) UNIQUE
-#  index_users_on_reset_password_token  (reset_password_token) UNIQUE
-#  index_users_on_unlock_token          (unlock_token) UNIQUE
+#  index_users_on_confirmation_token      (confirmation_token) UNIQUE
+#  index_users_on_email                   (email) UNIQUE
+#  index_users_on_otp_required_for_login  (otp_required_for_login)
+#  index_users_on_reset_password_token    (reset_password_token) UNIQUE
+#  index_users_on_role                    (role)
+#  index_users_on_unlock_token            (unlock_token) UNIQUE
 #
 require 'rails_helper'
 
@@ -103,6 +113,168 @@ RSpec.describe User, type: :model do
 
     it 'includes lockable' do
       expect(User.devise_modules).to include(:lockable)
+    end
+
+    it 'includes two_factor_authenticatable' do
+      expect(User.devise_modules).to include(:two_factor_authenticatable)
+    end
+  end
+
+  describe 'roles' do
+    it 'defaults to user role' do
+      user = create(:user)
+      expect(user.role).to eq('user')
+      expect(user).to be_user_role
+    end
+
+    it 'can be assigned staff role' do
+      user = create(:user, role: 'staff')
+      expect(user.role).to eq('staff')
+      expect(user).to be_staff_role
+    end
+
+    it 'can be assigned admin role' do
+      user = create(:user, role: 'admin')
+      expect(user.role).to eq('admin')
+      expect(user).to be_admin_role
+    end
+
+    it 'validates role inclusion' do
+      expect { build(:user, role: 'invalid') }.to raise_error(ArgumentError, "'invalid' is not a valid role")
+    end
+  end
+
+  describe 'two-factor authentication' do
+    let(:user) { create(:user) }
+
+    describe '#two_factor_enabled?' do
+      it 'returns false when 2FA is not enabled' do
+        expect(user.two_factor_enabled?).to be false
+      end
+
+      it 'returns true when 2FA is enabled' do
+        user.update!(otp_required_for_login: true)
+        expect(user.two_factor_enabled?).to be true
+      end
+    end
+
+    describe '#requires_two_factor?' do
+      it 'returns false for regular users' do
+        expect(user.requires_two_factor?).to be false
+      end
+
+      it 'returns true for staff users' do
+        user.update!(role: 'staff')
+        expect(user.requires_two_factor?).to be true
+      end
+
+      it 'returns true for admin users' do
+        user.update!(role: 'admin')
+        expect(user.requires_two_factor?).to be true
+      end
+    end
+
+    describe '#enable_two_factor!' do
+      it 'enables 2FA and generates backup codes' do
+        user.enable_two_factor!
+
+        expect(user.two_factor_enabled?).to be true
+        expect(user.backup_codes.length).to eq(10)
+        expect(user.backup_codes_generated?).to be true
+      end
+    end
+
+    describe '#disable_two_factor!' do
+      before do
+        user.enable_two_factor!
+      end
+
+      it 'disables 2FA and clears all related data' do
+        user.disable_two_factor!
+
+        expect(user.two_factor_enabled?).to be false
+        expect(user.backup_codes).to be_empty
+        expect(user.encrypted_otp_secret).to be_nil
+        expect(user.consumed_timestep).to be_nil
+        expect(user.last_sign_in_with_otp).to be_nil
+      end
+    end
+
+    describe '#backup_codes' do
+      it 'returns empty array when no codes are set' do
+        expect(user.backup_codes).to eq([])
+      end
+
+      it 'returns array of codes when set' do
+        codes = user.generate_backup_codes!
+        expect(user.backup_codes).to eq(codes)
+      end
+    end
+
+    describe '#generate_backup_codes!' do
+      it 'generates 10 backup codes' do
+        codes = user.generate_backup_codes!
+
+        expect(codes.length).to eq(10)
+        expect(codes.all? { |code| code.match?(/\A[A-Z0-9]{8}\z/) }).to be true
+        expect(user.backup_codes).to eq(codes)
+      end
+    end
+
+    describe '#invalidate_backup_code!' do
+      before do
+        user.generate_backup_codes!
+      end
+
+      it 'removes a valid backup code' do
+        code_to_use = user.backup_codes.first
+        initial_count = user.backup_codes.count
+
+        result = user.invalidate_backup_code!(code_to_use)
+
+        expect(result).to be true
+        expect(user.backup_codes).not_to include(code_to_use)
+        expect(user.backup_codes.count).to eq(initial_count - 1)
+      end
+
+      it 'returns false for invalid backup code' do
+        result = user.invalidate_backup_code!('INVALID1')
+
+        expect(result).to be false
+        expect(user.backup_codes.count).to eq(10)
+      end
+    end
+
+    describe '#qr_code_uri' do
+      it 'returns nil when no OTP secret is present' do
+        expect(user.qr_code_uri).to be_nil
+      end
+
+      it 'returns provisioning URI when OTP secret is present' do
+        user.otp_secret = ROTP::Base32.random_base32
+
+        uri = user.qr_code_uri
+        expect(uri).to include('otpauth://totp/')
+        expect(uri).to include(CGI.escape(user.email))
+        expect(uri).to include('Elmo')
+      end
+    end
+
+    describe 'privileged role enforcement' do
+      it 'automatically enables 2FA for staff users on creation' do
+        staff_user = create(:user, role: 'staff')
+        expect(staff_user.two_factor_enabled?).to be true
+      end
+
+      it 'automatically enables 2FA for admin users on creation' do
+        admin_user = create(:user, role: 'admin')
+        expect(admin_user.two_factor_enabled?).to be true
+      end
+
+      it 'does not enable 2FA for regular users on creation' do
+        regular_user = create(:user, role: 'user')
+        expect(regular_user.two_factor_enabled?).to be false
+      end
     end
   end
 end
