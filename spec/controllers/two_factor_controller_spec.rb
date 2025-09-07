@@ -5,12 +5,10 @@ RSpec.describe TwoFactorController, type: :controller do
   let(:staff_user) { create(:user, :staff) }
   let(:admin_user) { create(:user, :admin) }
 
-  before do
-    sign_in user
-  end
-
   describe 'GET #show' do
     context 'when 2FA is not enabled' do
+      before { sign_in user }
+
       it 'renders the setup page' do
         get :show
 
@@ -22,13 +20,14 @@ RSpec.describe TwoFactorController, type: :controller do
 
     context 'when 2FA is already enabled' do
       before do
+        sign_in user
         user.enable_two_factor!
       end
 
       it 'redirects to backup codes page' do
         get :show
 
-        expect(response).to redirect_to(two_factor_backup_codes_path)
+        expect(response).to redirect_to(backup_codes_two_factor_path)
       end
     end
   end
@@ -37,7 +36,9 @@ RSpec.describe TwoFactorController, type: :controller do
     let(:otp_secret) { ROTP::Base32.random_base32 }
 
     before do
+      sign_in user
       user.otp_secret = otp_secret
+      user.save!
     end
 
     context 'with valid OTP code' do
@@ -51,7 +52,7 @@ RSpec.describe TwoFactorController, type: :controller do
         user.reload
         expect(user.two_factor_enabled?).to be true
         expect(user.backup_codes_generated?).to be true
-        expect(response).to redirect_to(two_factor_backup_codes_path)
+        expect(response).to redirect_to(backup_codes_two_factor_path)
         expect(flash[:notice]).to eq('Two-factor authentication has been enabled successfully.')
       end
     end
@@ -75,6 +76,7 @@ RSpec.describe TwoFactorController, type: :controller do
   describe 'DELETE #destroy' do
     context 'for regular users with 2FA enabled' do
       before do
+        sign_in user
         user.enable_two_factor!
       end
 
@@ -103,7 +105,7 @@ RSpec.describe TwoFactorController, type: :controller do
 
         staff_user.reload
         expect(staff_user.two_factor_enabled?).to be true
-        expect(response).to redirect_to(two_factor_backup_codes_path)
+        expect(response).to redirect_to(backup_codes_two_factor_path)
         expect(flash[:alert]).to eq('Two-factor authentication cannot be disabled for your account role.')
       end
     end
@@ -121,7 +123,7 @@ RSpec.describe TwoFactorController, type: :controller do
 
         admin_user.reload
         expect(admin_user.two_factor_enabled?).to be true
-        expect(response).to redirect_to(two_factor_backup_codes_path)
+        expect(response).to redirect_to(backup_codes_two_factor_path)
         expect(flash[:alert]).to eq('Two-factor authentication cannot be disabled for your account role.')
       end
     end
@@ -130,6 +132,7 @@ RSpec.describe TwoFactorController, type: :controller do
   describe 'GET #backup_codes' do
     context 'when 2FA is enabled' do
       before do
+        sign_in user
         user.enable_two_factor!
       end
 
@@ -143,6 +146,8 @@ RSpec.describe TwoFactorController, type: :controller do
     end
 
     context 'when 2FA is not enabled' do
+      before { sign_in user }
+
       it 'redirects to 2FA setup with alert' do
         get :backup_codes
 
@@ -155,11 +160,12 @@ RSpec.describe TwoFactorController, type: :controller do
   describe 'POST #regenerate_backup_codes' do
     context 'when 2FA is enabled' do
       before do
+        sign_in user
         user.enable_two_factor!
       end
 
       it 'regenerates backup codes and logs the event' do
-        original_codes = user.backup_codes
+        original_codes = user.backup_codes.dup
 
         expect(AuditLogger).to receive(:log).with('backup_codes_regenerated', user, anything)
 
@@ -174,6 +180,8 @@ RSpec.describe TwoFactorController, type: :controller do
     end
 
     context 'when 2FA is not enabled' do
+      before { sign_in user }
+
       it 'redirects to 2FA setup with alert' do
         post :regenerate_backup_codes
 

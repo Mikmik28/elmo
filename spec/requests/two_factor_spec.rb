@@ -4,12 +4,10 @@ RSpec.describe '/two_factor', type: :request do
   let(:user) { create(:user) }
   let(:staff_user) { create(:user, :staff) }
 
-  before do
-    sign_in user
-  end
-
   describe 'GET /two_factor' do
     context 'when user is authenticated' do
+      before { login_as(user, scope: :user) }
+
       context 'when 2FA is not enabled' do
         it 'shows the setup page' do
           get two_factor_path
@@ -27,16 +25,12 @@ RSpec.describe '/two_factor', type: :request do
         it 'redirects to backup codes page' do
           get two_factor_path
 
-          expect(response).to redirect_to(two_factor_backup_codes_path)
+          expect(response).to redirect_to(backup_codes_two_factor_path)
         end
       end
     end
 
     context 'when user is not authenticated' do
-      before do
-        sign_out user
-      end
-
       it 'redirects to sign in page' do
         get two_factor_path
 
@@ -49,6 +43,7 @@ RSpec.describe '/two_factor', type: :request do
     let(:otp_secret) { ROTP::Base32.random_base32 }
 
     before do
+      login_as(user, scope: :user)
       user.otp_secret = otp_secret
     end
 
@@ -63,7 +58,7 @@ RSpec.describe '/two_factor', type: :request do
         user.reload
         expect(user.two_factor_enabled?).to be true
         expect(user.backup_codes_generated?).to be true
-        expect(response).to redirect_to(two_factor_backup_codes_path)
+        expect(response).to redirect_to(backup_codes_two_factor_path)
         follow_redirect!
         expect(response.body).to include('Two-factor authentication has been enabled successfully.')
       end
@@ -86,6 +81,7 @@ RSpec.describe '/two_factor', type: :request do
   describe 'DELETE /two_factor' do
     context 'for regular users with 2FA enabled' do
       before do
+        login_as(user, scope: :user)
         user.enable_two_factor!
       end
 
@@ -104,8 +100,7 @@ RSpec.describe '/two_factor', type: :request do
 
     context 'for staff users' do
       before do
-        sign_out user
-        sign_in staff_user
+        login_as(staff_user, scope: :user)
         staff_user.enable_two_factor!
       end
 
@@ -114,7 +109,7 @@ RSpec.describe '/two_factor', type: :request do
 
         staff_user.reload
         expect(staff_user.two_factor_enabled?).to be true
-        expect(response).to redirect_to(two_factor_backup_codes_path)
+        expect(response).to redirect_to(backup_codes_two_factor_path)
       end
     end
   end
@@ -122,11 +117,12 @@ RSpec.describe '/two_factor', type: :request do
   describe 'GET /two_factor/backup_codes' do
     context 'when 2FA is enabled' do
       before do
+        login_as(user, scope: :user)
         user.enable_two_factor!
       end
 
       it 'shows backup codes page' do
-        get two_factor_backup_codes_path
+        get backup_codes_two_factor_path
 
         expect(response).to have_http_status(:ok)
         expect(response.body).to include('Two-Factor Backup Codes')
@@ -137,8 +133,10 @@ RSpec.describe '/two_factor', type: :request do
     end
 
     context 'when 2FA is not enabled' do
+      before { login_as(user, scope: :user) }
+
       it 'redirects to 2FA setup with alert' do
-        get two_factor_backup_codes_path
+        get backup_codes_two_factor_path
 
         expect(response).to redirect_to(two_factor_path)
         follow_redirect!
@@ -150,6 +148,7 @@ RSpec.describe '/two_factor', type: :request do
   describe 'POST /two_factor/regenerate_backup_codes' do
     context 'when 2FA is enabled' do
       before do
+        login_as(user, scope: :user)
         user.enable_two_factor!
       end
 
@@ -158,7 +157,7 @@ RSpec.describe '/two_factor', type: :request do
 
         expect(AuditLogger).to receive(:log).with('backup_codes_regenerated', user, anything)
 
-        post regenerate_backup_codes_path
+        post regenerate_backup_codes_two_factor_path
 
         user.reload
         expect(user.backup_codes).not_to eq(original_codes)
@@ -169,8 +168,10 @@ RSpec.describe '/two_factor', type: :request do
     end
 
     context 'when 2FA is not enabled' do
+      before { login_as(user, scope: :user) }
+
       it 'redirects to 2FA setup with alert' do
-        post regenerate_backup_codes_path
+        post regenerate_backup_codes_two_factor_path
 
         expect(response).to redirect_to(two_factor_path)
         follow_redirect!

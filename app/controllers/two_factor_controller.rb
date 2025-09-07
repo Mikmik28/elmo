@@ -4,7 +4,7 @@ class TwoFactorController < ApplicationController
 
   def show
     if current_user.two_factor_enabled?
-      redirect_to two_factor_backup_codes_path
+      redirect_to backup_codes_two_factor_path
     else
       @qr_code_uri = current_user.qr_code_uri
       current_user.otp_secret = ROTP::Base32.random_base32
@@ -21,11 +21,11 @@ class TwoFactorController < ApplicationController
         user_agent: request.user_agent
       })
 
-      redirect_to two_factor_backup_codes_path, notice: "Two-factor authentication has been enabled successfully."
+      redirect_to backup_codes_two_factor_path, notice: "Two-factor authentication has been enabled successfully."
     else
       flash.now[:alert] = "Invalid verification code. Please try again."
       @qr_code_uri = current_user.qr_code_uri
-      render :show
+      render :show, status: :unprocessable_entity
     end
   end
 
@@ -74,7 +74,7 @@ class TwoFactorController < ApplicationController
   def ensure_2fa_setup_allowed
     # Staff and admin accounts cannot disable 2FA if it's already enabled
     if current_user.requires_two_factor? && current_user.two_factor_enabled? && action_name == "destroy"
-      redirect_to two_factor_backup_codes_path, alert: "Two-factor authentication cannot be disabled for your account role."
+            redirect_to backup_codes_two_factor_path, alert: "Two-factor authentication cannot be disabled for your account role."
     end
   end
 end

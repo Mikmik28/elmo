@@ -96,4 +96,7 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+  
+  # Extract controller testing helper methods to a separate gem
+  gem "rails-controller-testing"
 end
