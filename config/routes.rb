@@ -8,7 +8,7 @@ Rails.application.routes.draw do
   }
 
   # Two-Factor Authentication routes
-  resource :two_factor, only: [ :show, :create, :destroy ], controller: 'two_factor' do
+  resource :two_factor, only: [ :show, :create, :destroy ], controller: "two_factor" do
     get :backup_codes
     post :regenerate_backup_codes
   end
