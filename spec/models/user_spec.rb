@@ -7,17 +7,23 @@
 #  confirmation_token        :string
 #  confirmed_at              :datetime
 #  consumed_timestep         :integer
+#  credit_limit_cents        :integer          default(0), not null
+#  current_score             :integer          default(600), not null
 #  email                     :string           default(""), not null
 #  encrypted_otp_secret      :string
 #  encrypted_otp_secret_iv   :string
 #  encrypted_otp_secret_salt :string
 #  encrypted_password        :string           default(""), not null
 #  failed_attempts           :integer          default(0), not null
+#  full_name                 :string
+#  kyc_payload               :jsonb
+#  kyc_status                :string           default("pending"), not null
 #  last_sign_in_with_otp     :datetime
 #  locked_at                 :datetime
 #  otp_backup_codes          :text
 #  otp_required_for_login    :boolean          default(FALSE), not null
 #  phone                     :string
+#  referral_code             :string
 #  remember_created_at       :datetime
 #  reset_password_sent_at    :datetime
 #  reset_password_token      :string
@@ -30,8 +36,12 @@
 # Indexes
 #
 #  index_users_on_confirmation_token      (confirmation_token) UNIQUE
+#  index_users_on_credit_limit_cents      (credit_limit_cents)
 #  index_users_on_email                   (email) UNIQUE
+#  index_users_on_kyc_status              (kyc_status)
 #  index_users_on_otp_required_for_login  (otp_required_for_login)
+#  index_users_on_phone                   (phone) UNIQUE
+#  index_users_on_referral_code           (referral_code) UNIQUE
 #  index_users_on_reset_password_token    (reset_password_token) UNIQUE
 #  index_users_on_role                    (role)
 #  index_users_on_unlock_token            (unlock_token) UNIQUE
@@ -141,6 +151,49 @@ RSpec.describe User, type: :model do
 
     it 'validates role inclusion' do
       expect { build(:user, role: 'invalid') }.to raise_error(ArgumentError, "'invalid' is not a valid role")
+    end
+  end
+
+  describe 'KYC status' do
+    it 'defaults to pending' do
+      user = create(:user, kyc_status: 'pending')  # Explicitly set since factory defaults to approved
+      expect(user.kyc_status).to eq('pending')
+      expect(user).to be_kyc_pending
+    end
+
+    it 'can be approved' do
+      user = create(:user, kyc_status: 'approved')
+      expect(user.kyc_status).to eq('approved')
+      expect(user).to be_kyc_approved
+    end
+
+    it 'can be rejected' do
+      user = create(:user, kyc_status: 'rejected')
+      expect(user.kyc_status).to eq('rejected')
+      expect(user).to be_kyc_rejected
+    end
+
+    describe 'enum predicates' do
+      let(:user) { build(:user, kyc_status: 'pending') }
+
+      it 'responds to prefixed kyc predicates' do
+        expect(user).to respond_to(:kyc_pending?)
+        expect(user).to respond_to(:kyc_approved?)
+        expect(user).to respond_to(:kyc_rejected?)
+      end
+
+      it 'responds to unprefixed kyc predicates (aliases)' do
+        expect(user).to respond_to(:pending?)
+        expect(user).to respond_to(:approved?)
+        expect(user).to respond_to(:rejected?)
+      end
+
+      it 'returns correct values for kyc predicates' do
+        expect(user.kyc_pending?).to be true
+        expect(user.pending?).to be true
+        expect(user.kyc_approved?).to be false
+        expect(user.approved?).to be false
+      end
     end
   end
 

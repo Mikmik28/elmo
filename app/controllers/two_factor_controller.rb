@@ -25,7 +25,7 @@ class TwoFactorController < ApplicationController
     else
       flash.now[:alert] = "Invalid verification code. Please try again."
       @qr_code_uri = current_user.qr_code_uri
-      render :show, status: :unprocessable_entity
+      render :show, status: :unprocessable_content
     end
   end
 

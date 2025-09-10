@@ -54,7 +54,7 @@ class Users::SessionsController < Devise::SessionsController
           })
           flash.now[:alert] = "Invalid two-factor authentication code."
           self.resource = resource_class.new(sign_in_params)
-          render :new, status: :unprocessable_entity
+          render :new, status: :unprocessable_content
           nil
         end
       else
