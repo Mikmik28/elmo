@@ -9,6 +9,7 @@
 #  consumed_timestep         :integer
 #  credit_limit_cents        :integer          default(0), not null
 #  current_score             :integer          default(600), not null
+#  date_of_birth             :date
 #  email                     :string           default(""), not null
 #  encrypted_otp_secret      :string
 #  encrypted_otp_secret_iv   :string
@@ -63,6 +64,10 @@ class User < ApplicationRecord
   has_many :credit_score_events, dependent: :destroy
   has_many :audit_logs, dependent: :destroy
 
+  # Active Storage attachments for KYC
+  has_one_attached :kyc_gov_id_image
+  has_one_attached :kyc_selfie_image
+
   # Enums
   enum :role, { user: "user", staff: "staff", admin: "admin" }, suffix: true
   enum :kyc_status, { pending: "pending", approved: "approved", rejected: "rejected" }, prefix: :kyc
@@ -83,6 +88,12 @@ class User < ApplicationRecord
   validates :referral_code, uniqueness: true, allow_blank: true
   validates :credit_limit_cents, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :current_score, presence: true, numericality: { in: 300..900 }
+  validates :date_of_birth, presence: true, if: :kyc_complete?
+  validate :date_of_birth_reasonable, if: :date_of_birth?
+
+  # KYC file validations
+  validate :kyc_gov_id_image_format, if: -> { kyc_gov_id_image.attached? }
+  validate :kyc_selfie_image_format, if: -> { kyc_selfie_image.attached? }
 
   # Callbacks
   before_save :normalize_email
@@ -165,6 +176,21 @@ class User < ApplicationRecord
     self.credit_limit_cents = (amount.to_f * 100).to_i
   end
 
+  # KYC methods
+  def kyc_submitted?
+    kyc_gov_id_image.attached? && kyc_selfie_image.attached?
+  end
+
+  def kyc_complete?
+    kyc_submitted? && kyc_payload.present?
+  end
+
+  def age
+    return nil unless date_of_birth.present?
+    
+    ((Date.current - date_of_birth).to_f / 365.25).floor
+  end
+
   private
 
   def normalize_email
@@ -194,6 +220,42 @@ class User < ApplicationRecord
         self.referral_code = code
         break
       end
+    end
+  end
+
+  def kyc_gov_id_image_format
+    return unless kyc_gov_id_image.attached?
+
+    unless kyc_gov_id_image.content_type.in?(%w[image/png image/jpeg])
+      errors.add(:kyc_gov_id_image, "must be a PNG or JPEG image")
+    end
+
+    if kyc_gov_id_image.byte_size > 5.megabytes
+      errors.add(:kyc_gov_id_image, "must be less than 5MB")
+    end
+  end
+
+  def kyc_selfie_image_format
+    return unless kyc_selfie_image.attached?
+
+    unless kyc_selfie_image.content_type.in?(%w[image/png image/jpeg])
+      errors.add(:kyc_selfie_image, "must be a PNG or JPEG image")
+    end
+
+    if kyc_selfie_image.byte_size > 5.megabytes
+      errors.add(:kyc_selfie_image, "must be less than 5MB")
+    end
+  end
+
+  def date_of_birth_reasonable
+    return unless date_of_birth.present?
+
+    if date_of_birth > Date.current
+      errors.add(:date_of_birth, "cannot be in the future")
+    elsif date_of_birth < 120.years.ago
+      errors.add(:date_of_birth, "must be within the last 120 years")
+    elsif date_of_birth > 18.years.ago
+      errors.add(:date_of_birth, "must be at least 18 years old")
     end
   end
 end
