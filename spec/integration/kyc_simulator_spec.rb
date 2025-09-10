@@ -70,7 +70,7 @@ RSpec.describe "KYC Simulator Integration", type: :request do
 
     it "includes required event metadata" do
       post simulate_decision_kyc_path, params: { status: "approved" }
-      
+
       event = OutboxEvent.last
       expect(event.headers).to include("published_at")
       expect(event.headers).to include("correlation_id")
@@ -79,7 +79,7 @@ RSpec.describe "KYC Simulator Integration", type: :request do
 
     it "includes user context in payload" do
       post simulate_decision_kyc_path, params: { status: "approved" }
-      
+
       event = OutboxEvent.last
       expect(event.payload["user_id"]).to eq(user.id)
     end

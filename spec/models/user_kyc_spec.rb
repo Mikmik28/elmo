@@ -5,7 +5,7 @@ require "rails_helper"
 RSpec.describe User, type: :model do
   describe "KYC functionality" do
     let(:user) { create(:user) }
-    
+
     describe "Active Storage attachments" do
       it "can attach government ID image" do
         user.kyc_gov_id_image.attach(
@@ -13,7 +13,7 @@ RSpec.describe User, type: :model do
           filename: "id.jpg",
           content_type: "image/jpeg"
         )
-        
+
         expect(user.kyc_gov_id_image).to be_attached
       end
 
@@ -23,7 +23,7 @@ RSpec.describe User, type: :model do
           filename: "selfie.jpg",
           content_type: "image/jpeg"
         )
-        
+
         expect(user.kyc_selfie_image).to be_attached
       end
     end
@@ -36,7 +36,7 @@ RSpec.describe User, type: :model do
             filename: "test.txt",
             content_type: "text/plain"
           )
-          
+
           expect(user).not_to be_valid
           expect(user.errors[:kyc_gov_id_image]).to include("must be a PNG or JPEG image")
         end
@@ -47,7 +47,7 @@ RSpec.describe User, type: :model do
             filename: "test.png",
             content_type: "image/png"
           )
-          
+
           # Content type validation should pass (size validation might fail but that's separate)
           user.valid?
           expect(user.errors[:kyc_gov_id_image]).not_to include("must be a PNG or JPEG image")
@@ -59,7 +59,7 @@ RSpec.describe User, type: :model do
             filename: "test.jpg",
             content_type: "image/jpeg"
           )
-          
+
           user.valid?
           expect(user.errors[:kyc_gov_id_image]).not_to include("must be a PNG or JPEG image")
         end
@@ -72,7 +72,7 @@ RSpec.describe User, type: :model do
             filename: "test.gif",
             content_type: "image/gif"
           )
-          
+
           expect(user).not_to be_valid
           expect(user.errors[:kyc_selfie_image]).to include("must be a PNG or JPEG image")
         end
@@ -90,7 +90,7 @@ RSpec.describe User, type: :model do
           filename: "id.jpg",
           content_type: "image/jpeg"
         )
-        
+
         expect(user.kyc_submitted?).to be false
       end
 
@@ -105,7 +105,7 @@ RSpec.describe User, type: :model do
           filename: "selfie.jpg",
           content_type: "image/jpeg"
         )
-        
+
         expect(user.kyc_submitted?).to be true
       end
     end
@@ -127,7 +127,7 @@ RSpec.describe User, type: :model do
           filename: "selfie.jpg",
           content_type: "image/jpeg"
         )
-        
+
         expect(user.kyc_complete?).to be false
       end
 
@@ -143,7 +143,7 @@ RSpec.describe User, type: :model do
           content_type: "image/jpeg"
         )
         user.kyc_payload = { "gov_id_type" => "drivers_license" }
-        
+
         expect(user.kyc_complete?).to be true
       end
     end

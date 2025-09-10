@@ -76,10 +76,10 @@ module Kyc
         OutboxEvent.publish!(
           name: "kyc.submitted.v1",
           aggregate: @user,
-          payload: { 
+          payload: {
             user_id: @user.id,
             submission_timestamp: Time.current.iso8601,
-            document_types: ["government_id", "selfie"]
+            document_types: [ "government_id", "selfie" ]
           }
         )
       end
@@ -107,7 +107,7 @@ module Kyc
         OutboxEvent.publish!(
           name: "kyc.approved.v1",
           aggregate: @user,
-          payload: { 
+          payload: {
             user_id: @user.id,
             approval_timestamp: Time.current.iso8601,
             previous_status: "pending"

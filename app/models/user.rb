@@ -187,7 +187,7 @@ class User < ApplicationRecord
 
   def age
     return nil unless date_of_birth.present?
-    
+
     ((Date.current - date_of_birth).to_f / 365.25).floor
   end
 

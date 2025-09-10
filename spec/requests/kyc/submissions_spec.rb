@@ -56,7 +56,7 @@ RSpec.describe "Kyc::Submissions", type: :request do
       it "creates KYC submission successfully" do
         login_as(user, scope: :user)
         post kyc_path, params: valid_attributes
-        
+
         expect(response).to have_http_status(:redirect)
         expect(response).to redirect_to(kyc_path)
         expect(flash[:notice]).to include("submitted successfully")
@@ -65,11 +65,11 @@ RSpec.describe "Kyc::Submissions", type: :request do
       it "attaches files and stores masked payload" do
         login_as(user, scope: :user)
         post kyc_path, params: valid_attributes
-        
+
         user.reload
         expect(user.kyc_gov_id_image).to be_attached
         expect(user.kyc_selfie_image).to be_attached
-        
+
         expect(user.kyc_payload).to include(
           "gov_id_type" => "drivers_license",
           "gov_id_number_last4" => "8901",
@@ -99,7 +99,7 @@ RSpec.describe "Kyc::Submissions", type: :request do
         expect(event.payload).to include(
           "user_id" => user.id,
           "submission_timestamp" => be_present,
-          "document_types" => ["government_id", "selfie"]
+          "document_types" => [ "government_id", "selfie" ]
         )
       end
     end
@@ -109,7 +109,7 @@ RSpec.describe "Kyc::Submissions", type: :request do
         login_as(user, scope: :user)
         invalid_params = valid_attributes.dup
         invalid_params[:kyc].delete(:gov_id_image)
-        
+
         post kyc_path, params: invalid_params
         expect(response).to have_http_status(:unprocessable_content)
         expect(flash[:alert]).to be_present
@@ -119,22 +119,22 @@ RSpec.describe "Kyc::Submissions", type: :request do
         login_as(user, scope: :user)
         invalid_params = valid_attributes.dup
         invalid_params[:kyc][:gov_id_image] = fixture_file_upload("spec/fixtures/files/sample.txt", "text/plain")
-        
+
         post kyc_path, params: invalid_params
         expect(response).to have_http_status(:unprocessable_content)
       end
 
       it "handles timezone birthdate parsing Manila correctly" do
         login_as(user, scope: :user)
-        
+
         # Test with a date that could be affected by timezone differences
         Time.use_zone("Asia/Manila") do
           manila_date = Date.current - 25.years
-          
+
           post kyc_path, params: {
             kyc: valid_attributes[:kyc].merge(date_of_birth: manila_date)
           }
-          
+
           expect(response).to have_http_status(:redirect)
           expect(user.reload.date_of_birth).to eq(manila_date)
           expect(user.kyc_payload["date_of_birth"]).to eq(manila_date.to_s)
@@ -155,10 +155,10 @@ RSpec.describe "Kyc::Submissions", type: :request do
         expect {
           post simulate_decision_kyc_path, params: { status: "approved" }
         }.to change { user.reload.kyc_status }.from("pending").to("approved")
-        
+
         expect(response).to redirect_to(kyc_path)
         expect(flash[:notice]).to include("approved")
-        
+
         # Check that outbox event was created
         event = OutboxEvent.last
         expect(event.name).to eq("kyc.approved.v1")
@@ -171,7 +171,7 @@ RSpec.describe "Kyc::Submissions", type: :request do
         expect {
           post simulate_decision_kyc_path, params: { status: "rejected" }
         }.to change { user.reload.kyc_status }.from("pending").to("rejected")
-        
+
         expect(response).to redirect_to(kyc_path)
         expect(flash[:alert]).to include("rejected")
       end

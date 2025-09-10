@@ -17,8 +17,8 @@ Rails.application.routes.draw do
   namespace :admin do
     root "dashboard#index"
     get "dashboard", to: "dashboard#index"
-    
-    resources :kyc_reviews, only: [:index, :show] do
+
+    resources :kyc_reviews, only: [ :index, :show ] do
       member do
         patch :approve
         patch :reject
@@ -27,7 +27,7 @@ Rails.application.routes.draw do
   end
 
   # KYC routes
-  resource :kyc, only: [:show, :new, :create], controller: "kyc/submissions" do
+  resource :kyc, only: [ :show, :new, :create ], controller: "kyc/submissions" do
     post :simulate_decision, on: :member
   end
 

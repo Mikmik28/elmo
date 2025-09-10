@@ -89,7 +89,7 @@ FactoryBot.define do
         "address_line1" => "123 Test St, Manila",
         "date_of_birth" => 25.years.ago.to_s
       } }
-      
+
       after(:build) do |user|
         # Attach sample files if Active Storage is available
         if defined?(ActiveStorage)
@@ -100,7 +100,7 @@ FactoryBot.define do
           )
           user.kyc_selfie_image.attach(
             io: StringIO.new("fake image data"),
-            filename: "selfie.jpg", 
+            filename: "selfie.jpg",
             content_type: "image/jpeg"
           )
         end
@@ -120,7 +120,7 @@ FactoryBot.define do
         "address_line1" => "123 Test St, Manila",
         "date_of_birth" => 25.years.ago.to_s
       } }
-      
+
       after(:build) do |user|
         # Attach sample files if Active Storage is available
         if defined?(ActiveStorage)
@@ -131,7 +131,7 @@ FactoryBot.define do
           )
           user.kyc_selfie_image.attach(
             io: StringIO.new("fake image data"),
-            filename: "selfie.jpg", 
+            filename: "selfie.jpg",
             content_type: "image/jpeg"
           )
         end
