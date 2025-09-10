@@ -7,17 +7,23 @@
 #  confirmation_token        :string
 #  confirmed_at              :datetime
 #  consumed_timestep         :integer
+#  credit_limit_cents        :integer          default(0), not null
+#  current_score             :integer          default(600), not null
 #  email                     :string           default(""), not null
 #  encrypted_otp_secret      :string
 #  encrypted_otp_secret_iv   :string
 #  encrypted_otp_secret_salt :string
 #  encrypted_password        :string           default(""), not null
 #  failed_attempts           :integer          default(0), not null
+#  full_name                 :string
+#  kyc_payload               :jsonb
+#  kyc_status                :string           default("pending"), not null
 #  last_sign_in_with_otp     :datetime
 #  locked_at                 :datetime
 #  otp_backup_codes          :text
 #  otp_required_for_login    :boolean          default(FALSE), not null
 #  phone                     :string
+#  referral_code             :string
 #  remember_created_at       :datetime
 #  reset_password_sent_at    :datetime
 #  reset_password_token      :string
@@ -30,13 +36,19 @@
 # Indexes
 #
 #  index_users_on_confirmation_token      (confirmation_token) UNIQUE
+#  index_users_on_credit_limit_cents      (credit_limit_cents)
 #  index_users_on_email                   (email) UNIQUE
+#  index_users_on_kyc_status              (kyc_status)
 #  index_users_on_otp_required_for_login  (otp_required_for_login)
+#  index_users_on_phone                   (phone) UNIQUE
+#  index_users_on_referral_code           (referral_code) UNIQUE
 #  index_users_on_reset_password_token    (reset_password_token) UNIQUE
 #  index_users_on_role                    (role)
 #  index_users_on_unlock_token            (unlock_token) UNIQUE
 #
 class User < ApplicationRecord
+  include EnumAliases
+
   # Include default devise modules. Others available are:
   # :trackable and :omniauthable
   devise :database_authenticatable, :registerable,
@@ -44,22 +56,43 @@ class User < ApplicationRecord
          :two_factor_authenticatable,
          otp_secret_encryption_key: Rails.application.credentials.dig(:otp_secret_encryption_key)
 
+  # Associations
+  has_many :loans, dependent: :destroy
+  has_many :referrals_as_referrer, class_name: "Referral", foreign_key: "referrer_id", dependent: :destroy
+  has_many :referrals_as_referee, class_name: "Referral", foreign_key: "referee_id", dependent: :destroy
+  has_many :credit_score_events, dependent: :destroy
+  has_many :audit_logs, dependent: :destroy
+
   # Enums
   enum :role, { user: "user", staff: "staff", admin: "admin" }, suffix: true
+  enum :kyc_status, { pending: "pending", approved: "approved", rejected: "rejected" }, prefix: :kyc
+
+  # Create unprefixed aliases for kyc_status predicates (e.g., approved?, rejected?)
+  alias_unprefixed_enum_predicates :kyc_status, prefix: :kyc
 
   # Validations
   validates :email, presence: true,
                     uniqueness: { case_sensitive: false },
                     format: { with: URI::MailTo::EMAIL_REGEXP, message: "is invalid" }
-  validates :phone, format: { with: /\A[\+]?[\d\s\-\(\)]+\z/, message: "must be a valid phone number" }, allow_blank: true
+  validates :phone, format: { with: /\A[\+]?[\d\s\-\(\)]+\z/, message: "must be a valid phone number" },
+                    uniqueness: true, allow_blank: true
   validates :password, confirmation: true
   validates :password_confirmation, presence: true, if: :password_required?
   validates :role, presence: true, inclusion: { in: roles.keys }
+  validates :kyc_status, presence: true, inclusion: { in: kyc_statuses.keys }
+  validates :referral_code, uniqueness: true, allow_blank: true
+  validates :credit_limit_cents, presence: true, numericality: { greater_than_or_equal_to: 0 }
+  validates :current_score, presence: true, numericality: { in: 300..900 }
 
   # Callbacks
   before_save :normalize_email
   before_save :normalize_phone
   before_create :enforce_2fa_for_privileged_roles
+  before_create :generate_referral_code
+
+  # Scopes
+  scope :kyc_approved, -> { where(kyc_status: "approved") }
+  scope :with_active_loans, -> { joins(:loans).where(loans: { state: %w[disbursed overdue] }) }
 
   # 2FA Methods
   def backup_codes
@@ -119,6 +152,19 @@ class User < ApplicationRecord
     ROTP::TOTP.new(otp_secret, issuer: issuer).provisioning_uri(label)
   end
 
+  # Lending-specific methods
+  def has_overdue_loans?
+    loans.where(state: "overdue").exists?
+  end
+
+  def credit_limit_in_pesos
+    credit_limit_cents / 100.0
+  end
+
+  def credit_limit_in_pesos=(amount)
+    self.credit_limit_cents = (amount.to_f * 100).to_i
+  end
+
   private
 
   def normalize_email
@@ -136,6 +182,18 @@ class User < ApplicationRecord
   def enforce_2fa_for_privileged_roles
     if requires_two_factor?
       self.otp_required_for_login = true
+    end
+  end
+
+  def generate_referral_code
+    return if referral_code.present?
+
+    loop do
+      code = SecureRandom.alphanumeric(8).upcase
+      if self.class.where(referral_code: code).empty?
+        self.referral_code = code
+        break
+      end
     end
   end
 end

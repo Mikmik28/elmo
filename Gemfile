@@ -96,4 +96,7 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+
+  # Shoulda matchers for cleaner model and controller tests
+  gem "shoulda-matchers"
 end

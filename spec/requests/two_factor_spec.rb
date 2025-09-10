@@ -72,7 +72,7 @@ RSpec.describe '/two_factor', type: :request do
 
         user.reload
         expect(user.two_factor_enabled?).to be false
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(response.body).to include('Invalid verification code. Please try again.')
       end
     end
