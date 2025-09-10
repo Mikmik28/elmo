@@ -1,0 +1,111 @@
+<% content_for :title, "KYC Review - #{@user.full_name}" %>
+
+<div class="container mx-auto px-4 py-8">
+  <div class="mb-6">
+    <%= link_to "← Back to KYC Reviews", admin_kyc_reviews_path, class: "text-indigo-600 hover:text-indigo-900" %>
+  </div>
+
+  <h1 class="text-3xl font-bold text-gray-900 mb-8">KYC Review: <%= @user.full_name %></h1>
+  
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- User Information -->
+    <div class="bg-white shadow rounded-lg p-6">
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">User Information</h2>
+      <dl class="space-y-4">
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Full Name</dt>
+          <dd class="text-sm text-gray-900"><%= @user.full_name %></dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Email</dt>
+          <dd class="text-sm text-gray-900"><%= @user.email %></dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Phone</dt>
+          <dd class="text-sm text-gray-900"><%= @user.phone %></dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Date of Birth</dt>
+          <dd class="text-sm text-gray-900"><%= @user.date_of_birth&.strftime("%B %d, %Y") %></dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Age</dt>
+          <dd class="text-sm text-gray-900"><%= @user.age %> years old</dd>
+        </div>
+      </dl>
+    </div>
+
+    <!-- KYC Data -->
+    <div class="bg-white shadow rounded-lg p-6">
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">KYC Data</h2>
+      <% if @kyc_data %>
+        <dl class="space-y-4">
+          <div>
+            <dt class="text-sm font-medium text-gray-500">Government ID Type</dt>
+            <dd class="text-sm text-gray-900"><%= @kyc_data["gov_id_type"]&.humanize %></dd>
+          </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500">ID Number (Last 4)</dt>
+            <dd class="text-sm text-gray-900">****<%= @kyc_data["gov_id_number_last4"] %></dd>
+          </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500">ID Expiry</dt>
+            <dd class="text-sm text-gray-900"><%= @kyc_data["id_expiry"] %></dd>
+          </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500">Address</dt>
+            <dd class="text-sm text-gray-900"><%= @kyc_data["address_line1"] %></dd>
+          </div>
+        </dl>
+      <% else %>
+        <p class="text-sm text-gray-500">No KYC data available.</p>
+      <% end %>
+    </div>
+
+    <!-- Document Images -->
+    <div class="bg-white shadow rounded-lg p-6 lg:col-span-2">
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">Uploaded Documents</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h3 class="text-lg font-medium text-gray-900 mb-2">Government ID</h3>
+          <% if @user.kyc_gov_id_image.attached? %>
+            <div class="border rounded-lg p-4">
+              <%= image_tag @user.kyc_gov_id_image, class: "w-full h-auto rounded", alt: "Government ID" %>
+            </div>
+          <% else %>
+            <p class="text-sm text-gray-500">No government ID uploaded.</p>
+          <% end %>
+        </div>
+        
+        <div>
+          <h3 class="text-lg font-medium text-gray-900 mb-2">Selfie</h3>
+          <% if @user.kyc_selfie_image.attached? %>
+            <div class="border rounded-lg p-4">
+              <%= image_tag @user.kyc_selfie_image, class: "w-full h-auto rounded", alt: "Selfie" %>
+            </div>
+          <% else %>
+            <p class="text-sm text-gray-500">No selfie uploaded.</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="lg:col-span-2">
+      <div class="bg-white shadow rounded-lg p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Review Decision</h2>
+        <div class="flex space-x-4">
+          <%= link_to "Approve KYC", approve_admin_kyc_review_path(@user), 
+                      method: :patch,
+                      class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500",
+                      data: { confirm: "Are you sure you want to approve this KYC submission?" } %>
+          
+          <%= link_to "Reject KYC", reject_admin_kyc_review_path(@user), 
+                      method: :patch,
+                      class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500",
+                      data: { confirm: "Are you sure you want to reject this KYC submission?" } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

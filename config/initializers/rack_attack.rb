@@ -31,6 +31,13 @@ class Rack::Attack
     end
   end
 
+  # Allow 2 KYC submission attempts per IP per hour
+  throttle("kyc_submission_attempts_per_ip", limit: 2, period: 1.hour) do |req|
+    if req.path == "/kyc" && req.post?
+      req.ip
+    end
+  end
+
   # General rate limiting: 100 requests per IP per minute
   throttle("general_requests_per_ip", limit: 100, period: 1.minute) do |req|
     req.ip unless req.path.start_with?("/assets")

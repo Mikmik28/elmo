@@ -1,0 +1,38 @@
+<% content_for :title, "KYC Reviews" %>
+
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold text-gray-900 mb-8">KYC Reviews</h1>
+  
+  <% if @pending_kyc_users.any? %>
+    <div class="bg-white shadow overflow-hidden sm:rounded-md">
+      <ul class="divide-y divide-gray-200">
+        <% @pending_kyc_users.each do |user| %>
+          <li>
+            <div class="px-4 py-4 flex items-center justify-between">
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                    <span class="text-sm font-medium text-gray-700"><%= user.full_name&.first %></span>
+                  </div>
+                </div>
+                <div class="ml-4">
+                  <div class="text-sm font-medium text-gray-900"><%= user.full_name %></div>
+                  <div class="text-sm text-gray-500"><%= user.email %></div>
+                  <div class="text-sm text-gray-500">Submitted: <%= user.updated_at.strftime("%B %d, %Y at %I:%M %p") %></div>
+                </div>
+              </div>
+              <div class="flex items-center space-x-2">
+                <%= link_to "Review", admin_kyc_review_path(user), class: "inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
+              </div>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  <% else %>
+    <div class="text-center py-12">
+      <h3 class="mt-2 text-sm font-medium text-gray-900">No pending KYC reviews</h3>
+      <p class="mt-1 text-sm text-gray-500">All KYC submissions have been reviewed.</p>
+    </div>
+  <% end %>
+</div>

@@ -9,6 +9,7 @@
 #  consumed_timestep         :integer
 #  credit_limit_cents        :integer          default(0), not null
 #  current_score             :integer          default(600), not null
+#  date_of_birth             :date
 #  email                     :string           default(""), not null
 #  encrypted_otp_secret      :string
 #  encrypted_otp_secret_iv   :string
@@ -75,8 +76,66 @@ FactoryBot.define do
       kyc_status { "approved" }
     end
 
+    trait :kyc_pending do
+      kyc_status { "pending" }
+    end
+
+    trait :kyc_pending_with_data do
+      kyc_status { "pending" }
+      date_of_birth { 25.years.ago }
+      kyc_payload { {
+        "gov_id_type" => "drivers_license",
+        "gov_id_number_last4" => "1234",
+        "address_line1" => "123 Test St, Manila",
+        "date_of_birth" => 25.years.ago.to_s
+      } }
+
+      after(:build) do |user|
+        # Attach sample files if Active Storage is available
+        if defined?(ActiveStorage)
+          user.kyc_gov_id_image.attach(
+            io: StringIO.new("fake image data"),
+            filename: "gov_id.jpg",
+            content_type: "image/jpeg"
+          )
+          user.kyc_selfie_image.attach(
+            io: StringIO.new("fake image data"),
+            filename: "selfie.jpg",
+            content_type: "image/jpeg"
+          )
+        end
+      end
+    end
+
     trait :kyc_rejected do
       kyc_status { "rejected" }
+    end
+
+    trait :kyc_complete do
+      kyc_status { "approved" }
+      date_of_birth { 25.years.ago }
+      kyc_payload { {
+        "gov_id_type" => "drivers_license",
+        "gov_id_number_last4" => "1234",
+        "address_line1" => "123 Test St, Manila",
+        "date_of_birth" => 25.years.ago.to_s
+      } }
+
+      after(:build) do |user|
+        # Attach sample files if Active Storage is available
+        if defined?(ActiveStorage)
+          user.kyc_gov_id_image.attach(
+            io: StringIO.new("fake image data"),
+            filename: "gov_id.jpg",
+            content_type: "image/jpeg"
+          )
+          user.kyc_selfie_image.attach(
+            io: StringIO.new("fake image data"),
+            filename: "selfie.jpg",
+            content_type: "image/jpeg"
+          )
+        end
+      end
     end
 
     trait :staff do

@@ -9,6 +9,7 @@
 #  consumed_timestep         :integer
 #  credit_limit_cents        :integer          default(0), not null
 #  current_score             :integer          default(600), not null
+#  date_of_birth             :date
 #  email                     :string           default(""), not null
 #  encrypted_otp_secret      :string
 #  encrypted_otp_secret_iv   :string
@@ -78,6 +79,42 @@ RSpec.describe User, type: :model do
       valid_phones = [ '+639171234567', '09171234567', '+1 (555) 123-4567' ]
       valid_phones.each do |phone|
         user = build(:user, phone: phone)
+        expect(user).to be_valid
+      end
+    end
+
+    describe 'date of birth validation' do
+      it 'allows nil date of birth for non-KYC complete users' do
+        user = build(:user, date_of_birth: nil)
+        expect(user).to be_valid
+      end
+
+      it 'requires date of birth for KYC complete users' do
+        user = build(:user, :kyc_complete, date_of_birth: nil)
+        expect(user).not_to be_valid
+        expect(user.errors[:date_of_birth]).to include("can't be blank")
+      end
+
+      it 'rejects future dates' do
+        user = build(:user, date_of_birth: 1.day.from_now)
+        expect(user).not_to be_valid
+        expect(user.errors[:date_of_birth]).to include("cannot be in the future")
+      end
+
+      it 'rejects dates more than 120 years ago' do
+        user = build(:user, date_of_birth: 121.years.ago)
+        expect(user).not_to be_valid
+        expect(user.errors[:date_of_birth]).to include("must be within the last 120 years")
+      end
+
+      it 'rejects dates for users under 18' do
+        user = build(:user, date_of_birth: 17.years.ago.to_date + 1.day) # Definitely under 18
+        expect(user).not_to be_valid
+        expect(user.errors[:date_of_birth]).to include("must be at least 18 years old")
+      end
+
+      it 'accepts valid dates for users 18 and older' do
+        user = build(:user, date_of_birth: 19.years.ago.to_date) # Definitely over 18
         expect(user).to be_valid
       end
     end
@@ -194,6 +231,25 @@ RSpec.describe User, type: :model do
         expect(user.kyc_approved?).to be false
         expect(user.approved?).to be false
       end
+    end
+  end
+
+  describe '#age' do
+    it 'returns nil when date_of_birth is not set' do
+      user = build(:user, date_of_birth: nil)
+      expect(user.age).to be_nil
+    end
+
+    it 'calculates age correctly' do
+      user = build(:user, date_of_birth: 25.years.ago.to_date)
+      expect(user.age).to be_between(24, 25) # Allow for edge cases around birthdays
+    end
+
+    it 'handles leap years correctly' do
+      # Use a valid leap year date
+      user = build(:user, date_of_birth: Date.new(1992, 2, 29)) # 1992 was a leap year
+      expected_age = ((Date.current - user.date_of_birth).to_f / 365.25).floor
+      expect(user.age).to eq(expected_age)
     end
   end
 
