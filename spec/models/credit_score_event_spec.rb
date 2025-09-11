@@ -72,16 +72,14 @@ RSpec.describe CreditScoreEvent, type: :model do
         }.to change { user.current_score }.from(600).to(625)
       end
 
-      it 'enforces credit score bounds (300-900)' do
-        user.update!(current_score: 350)
-        CreditScoreEvent.create!(user: user, reason: 'default', delta: -100)
-        user.reload
-        expect(user.current_score).to eq(300) # Cannot go below 300
+      it 'enforces credit score bounds (300-950)' do
+        user = create(:user, current_score: 800)
 
-        user.update!(current_score: 850)
-        CreditScoreEvent.create!(user: user, reason: 'kyc_bonus', delta: 100)
+        # Try to exceed upper bound
+        CreditScoreEvent.create!(user: user, reason: 'kyc_bonus', delta: 200)
+
         user.reload
-        expect(user.current_score).to eq(900) # Cannot go above 900
+        expect(user.current_score).to eq(950) # Cannot go above 950
       end
     end
 

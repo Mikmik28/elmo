@@ -120,7 +120,7 @@ RSpec.describe 'Core schema functionality', type: :model do
         user.update!(current_score: 850)
         CreditScoreEvent.create!(user: user, reason: "kyc_bonus", delta: 100)
         user.reload
-        expect(user.current_score).to eq(900)
+        expect(user.current_score).to eq(950)
       end
     end
 

@@ -11,7 +11,7 @@ Rails.configuration.x.scoring.weights = {
 
 Rails.configuration.x.scoring.bounds = {
   min: 300,
-  max: 900,
+  max: 950,
   base: 600
 }
 

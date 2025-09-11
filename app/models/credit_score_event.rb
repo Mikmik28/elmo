@@ -61,7 +61,7 @@ class CreditScoreEvent < ApplicationRecord
 
   def sync_user_score
     user.with_lock do
-      new_score = [ 900, [ 300, user.current_score + delta ].max ].min
+      new_score = [ 950, [ 300, user.current_score + delta ].max ].min
       user.update!(current_score: new_score)
     end
   end

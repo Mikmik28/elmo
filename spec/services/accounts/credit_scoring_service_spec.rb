@@ -15,15 +15,15 @@ RSpec.describe Accounts::Services::CreditScoringService, type: :service do
     context "with default user (good profile)" do
       it "returns a score within bounds" do
         score = service.compute!
-        expect(score).to be_between(300, 900)
+        expect(score).to be_between(300, 950)
       end
 
-      it "clamps score to 300..900 bounds" do
+      it "clamps score to 300..950 bounds" do
         # Test minimum bound
         user.update!(current_score: 350)
         score = service.compute!(persist: true)
         expect(score).to be >= 300
-        expect(score).to be <= 900
+        expect(score).to be <= 950
       end
     end
 

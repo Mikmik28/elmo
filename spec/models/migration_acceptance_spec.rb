@@ -162,7 +162,7 @@ RSpec.describe 'Migration roundtrip and money precision tests', type: :model do
       user.reload
 
       expect(user.current_score).to eq(new_score)
-      expect(new_score).to be_between(300, 900)
+      expect(new_score).to be_between(300, 950)
 
       # Events are created for audit trail but don't auto-update score
       event = create(:credit_score_event,
