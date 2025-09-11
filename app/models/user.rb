@@ -87,7 +87,7 @@ class User < ApplicationRecord
   validates :kyc_status, presence: true, inclusion: { in: kyc_statuses.keys }
   validates :referral_code, uniqueness: true, allow_blank: true
   validates :credit_limit_cents, presence: true, numericality: { greater_than_or_equal_to: 0 }
-  validates :current_score, presence: true, numericality: { in: 300..900 }
+  validates :current_score, presence: true, numericality: { in: 300..950 }
   validates :date_of_birth, presence: true, if: :kyc_complete?
   validate :date_of_birth_reasonable, if: :date_of_birth?
 

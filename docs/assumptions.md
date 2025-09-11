@@ -42,6 +42,7 @@ This document outlines the core assumptions and conventions for the eLMo (Loan M
 - **Interest Calculation**: Per product-specific rules (see loan product documentation)
 - **Pro-rating**: Based on actual term_days for accurate daily calculations
 - **Implementation**: Use `BigDecimal` for all financial calculations
+- **Credit Scoring**: Canonical range 300-950 (aligned with TransUnion Philippines CreditVision)
 
 ## API Design & Reliability
 

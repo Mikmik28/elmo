@@ -83,32 +83,71 @@ RSpec.describe 'Core schema functionality', type: :model do
   end
 
   describe 'Credit scoring functionality' do
-    it 'updates user credit score when events are created' do
-      user = create(:user, current_score: 600)
+    context 'when legacy_delta_mode is enabled' do
+      around do |example|
+        original_value = Rails.configuration.x.scoring.legacy_delta_mode
+        Rails.configuration.x.scoring.legacy_delta_mode = true
 
-      expect {
-        CreditScoreEvent.create!(
-          user: user,
-          reason: "on_time_payment",
-          delta: 25,
-          meta: { loan_id: "test" }
-        )
+        begin
+          example.run
+        ensure
+          Rails.configuration.x.scoring.legacy_delta_mode = original_value
+        end
+      end
+
+      it 'updates user credit score when events are created' do
+        user = create(:user, current_score: 600)
+
+        expect {
+          CreditScoreEvent.create!(
+            user: user,
+            reason: "on_time_payment",
+            delta: 25,
+            meta: { loan_id: "test" }
+          )
+          user.reload
+        }.to change { user.current_score }.from(600).to(625)
+      end
+
+      it 'enforces credit score bounds' do
+        # Test lower bound
+        user = create(:user, current_score: 350)
+        CreditScoreEvent.create!(user: user, reason: "default", delta: -100)
         user.reload
-      }.to change { user.current_score }.from(600).to(625)
+        expect(user.current_score).to eq(300)
+
+        # Test upper bound
+        user.update!(current_score: 850)
+        CreditScoreEvent.create!(user: user, reason: "kyc_bonus", delta: 100)
+        user.reload
+        expect(user.current_score).to eq(950)
+      end
     end
 
-    it 'enforces credit score bounds' do
-      # Test lower bound
-      user = create(:user, current_score: 350)
-      CreditScoreEvent.create!(user: user, reason: "default", delta: -100)
-      user.reload
-      expect(user.current_score).to eq(300)
+    context 'when legacy_delta_mode is disabled (default)' do
+      it 'creates events without automatically updating scores' do
+        user = create(:user, current_score: 600)
 
-      # Test upper bound
-      user.update!(current_score: 850)
-      CreditScoreEvent.create!(user: user, reason: "kyc_bonus", delta: 100)
-      user.reload
-      expect(user.current_score).to eq(900)
+        expect {
+          CreditScoreEvent.create!(
+            user: user,
+            reason: "on_time_payment",
+            delta: 25,
+            meta: { loan_id: "test" }
+          )
+          user.reload
+        }.not_to change { user.current_score }
+      end
+
+      it 'score updates are handled by CreditScoringService' do
+        user = create(:user, current_score: 600)
+        service = Accounts::Services::CreditScoringService.new(user)
+
+        expect {
+          service.compute!(persist: true, emit_event: false)
+          user.reload
+        }.to change { user.current_score }
+      end
     end
   end
 

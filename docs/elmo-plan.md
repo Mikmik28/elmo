@@ -57,7 +57,7 @@
 - **Beta:** Mid‑term, Penalties, Schedules, Notifications, Collections UI, Score v2.
 - **GA:** Long‑term (270/365 only), Multi‑env deploy, Analytics export, Basic ledgerizing.
 
-**Assumptions:** PH market; one payment gateway; SMS + email vendors exist; manual reviewer in early weeks; mobile‑first web (no native app initially).
+**Assumptions:** PH market; one payment gateway; SMS + email vendors exist; manual reviewer in early weeks; mobile‑first web (no native app initially); **canonical internal credit score range 300–950 (aligned with TransUnion PH); partner scores normalized via config if needed**.
 
 ---
 
@@ -463,7 +463,7 @@ spec/
   requests/
 ```
 
-**Conventions**: PORO services, query objects, null‑object patterns, `annotate` gem for schema docs, RuboCop default + Rails + Performance cops.
+**Conventions**: PORO services, query objects, null‑object patterns, `annotate` for schema docs, RuboCop (Rails + Performance cops), **string‑backed enums with prefixes** (e.g., `state_pending?`, `kyc_approved?`); optional alias concern to expose unprefixed predicates where helpful.
 
 Example initializers:
 
@@ -599,9 +599,10 @@ RSpec.describe CreditScoringService do
       expect(score).to be < 600
     end
 
-    it "is bounded within 300..900" do
+    it "is bounded within 300..950" do
       user.update!(current_score: 1000)
-      expect(described_class.new(user).compute!).to be_between(300, 900)
+      expect(described_class.new(user).compute!).to be_between(300, 950)
+    end
     end
   end
 end
