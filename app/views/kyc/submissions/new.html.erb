@@ -9,7 +9,7 @@
     </p>
 
     <%= form_with(url: kyc_path, method: :post, local: true, multipart: true, 
-                  class: "space-y-6", data: { turbo_frame: "kyc_form" }) do |form| %>
+                  class: "space-y-6", scope: :kyc) do |form| %>
       
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
