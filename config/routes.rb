@@ -31,6 +31,10 @@ Rails.application.routes.draw do
     post :simulate_decision, on: :member
   end
 
+  # Credit scoring preview routes
+  get "scoring/preview", to: "scoring/previews#show", as: :scoring_preview
+  post "scoring/recompute", to: "scoring/previews#create", as: :scoring_recompute
+
   # Letter Opener routes (development only)
   if Rails.env.development?
     mount LetterOpenerWeb::Engine, at: "/letter_opener"

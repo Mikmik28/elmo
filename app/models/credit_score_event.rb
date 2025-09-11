@@ -31,7 +31,8 @@ class CreditScoreEvent < ApplicationRecord
     overdue: "overdue",
     utilization: "utilization",
     kyc_bonus: "kyc_bonus",
-    default: "default"
+    default: "default",
+    recompute: "recompute"
   }, suffix: true
 
   # Validations
@@ -39,7 +40,7 @@ class CreditScoreEvent < ApplicationRecord
   validates :delta, presence: true, numericality: { other_than: 0 }
 
   # Callbacks
-  after_create :update_user_credit_score
+  after_create_commit :sync_user_score, if: -> { Rails.configuration.x.scoring.legacy_delta_mode }
 
   # Scopes
   scope :positive, -> { where("delta > 0") }
@@ -58,8 +59,10 @@ class CreditScoreEvent < ApplicationRecord
 
   private
 
-  def update_user_credit_score
-    new_score = [ 900, [ 300, user.current_score + delta ].max ].min
-    user.update!(current_score: new_score)
+  def sync_user_score
+    user.with_lock do
+      new_score = [ 900, [ 300, user.current_score + delta ].max ].min
+      user.update!(current_score: new_score)
+    end
   end
 end

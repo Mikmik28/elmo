@@ -68,6 +68,8 @@ class Loan < ApplicationRecord
   scope :active, -> { where(state: %w[disbursed overdue]) }
   scope :overdue_today, -> { where(state: "disbursed").where("due_on < ?", Date.current) }
   scope :due_soon, ->(days = 3) { where(state: "disbursed").where(due_on: Date.current..Date.current + days.days) }
+  scope :on_time, -> { where(state: "paid").joins(:payments).where("payments.created_at <= loans.due_on") }
+  scope :overdue_recent, ->(days = 90) { where(state: %w[overdue defaulted]).where("updated_at >= ?", days.days.ago) }
 
   # Money methods
   def amount_in_pesos

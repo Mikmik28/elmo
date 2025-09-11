@@ -1,0 +1,100 @@
+<% content_for :title, "Credit Score Preview" %>
+
+<div class="max-w-4xl mx-auto p-6 space-y-6">
+  <div class="bg-white shadow rounded-lg p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-gray-900">Credit Score Preview</h1>
+      <%= form_with url: scoring_recompute_path, method: :post, local: true, class: "inline" do |f| %>
+        <%= f.submit "Recompute Score", class: "bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded" %>
+      <% end %>
+    </div>
+
+    <div class="mb-6">
+      <div class="text-center">
+        <div class="text-6xl font-bold text-blue-600 mb-2"><%= @current_score %></div>
+        <div class="text-lg text-gray-600">Current Credit Score</div>
+        <div class="text-sm text-gray-500">Range: 300-900</div>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">Score Breakdown</h2>
+      
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Component</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Raw Value</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Normalized (-100 to +100)</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weight</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contribution</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <% @breakdown.each do |component, data| %>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <%= component.to_s.humanize %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <% case component %>
+                  <% when :payment_history %>
+                    <%= number_to_percentage(data[:raw_value] * 100, precision: 1) %>
+                  <% when :utilization %>
+                    <%= number_to_percentage(data[:raw_value] * 100, precision: 1) %>
+                  <% when :tenure %>
+                    <%= pluralize(data[:raw_value], 'day') %>
+                  <% when :behavior %>
+                    <%= data[:raw_value] %>
+                  <% when :kyc %>
+                    <%= data[:raw_value] ? 'Approved' : 'Pending' %>
+                  <% end %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <span class="<%= data[:normalized] >= 0 ? 'text-green-600' : 'text-red-600' %>">
+                    <%= data[:normalized].to_f.round(1) %>
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <%= number_to_percentage(data[:weight] * 100, precision: 0) %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <span class="<%= data[:contribution] >= 0 ? 'text-green-600' : 'text-red-600' %>">
+                    <%= sprintf("%+.1f", data[:contribution].to_f) %>
+                  </span>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+          <tfoot class="bg-gray-50">
+            <tr>
+              <td colspan="4" class="px-6 py-3 text-right text-sm font-medium text-gray-900">
+                Total Contribution:
+              </td>
+              <td class="px-6 py-3 whitespace-nowrap text-sm font-bold">
+                <span class="<%= @total_contribution >= 0 ? 'text-green-600' : 'text-red-600' %>">
+                  <%= sprintf("%+.1f", @total_contribution) %>
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td colspan="4" class="px-6 py-3 text-right text-sm font-medium text-gray-900">
+                Base Score + Contributions:
+              </td>
+              <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-blue-600">
+                600 + (<%= sprintf("%+.1f", @total_contribution) %>) = <%= @current_score %>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div class="mt-6 text-sm text-gray-500">
+      <p><strong>Note:</strong> This preview is only available in development mode.</p>
+      <p>Components are normalized to [-100, +100] range, then weighted and added to base score (600).</p>
+      <p>Final score is clamped to [300, 900] range.</p>
+    </div>
+  </div>
+</div>

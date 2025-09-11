@@ -45,30 +45,59 @@ RSpec.describe CreditScoreEvent, type: :model do
       overdue: 'overdue',
       utilization: 'utilization',
       kyc_bonus: 'kyc_bonus',
-      default: 'default'
+      default: 'default',
+      recompute: 'recompute'
     ).backed_by_column_of_type(:string).with_suffix }
   end
 
   describe 'callbacks' do
     let(:user) { create(:user, current_score: 600) }
 
-    it 'updates user credit score on creation' do
-      expect {
-        CreditScoreEvent.create!(user: user, reason: 'on_time_payment', delta: 25)
+    context 'when legacy_delta_mode is enabled' do
+      around do |example|
+        original_value = Rails.configuration.x.scoring.legacy_delta_mode
+        Rails.configuration.x.scoring.legacy_delta_mode = true
+
+        begin
+          example.run
+        ensure
+          Rails.configuration.x.scoring.legacy_delta_mode = original_value
+        end
+      end
+
+      it 'updates user credit score on creation' do
+        expect {
+          CreditScoreEvent.create!(user: user, reason: 'on_time_payment', delta: 25)
+          user.reload
+        }.to change { user.current_score }.from(600).to(625)
+      end
+
+      it 'enforces credit score bounds (300-900)' do
+        user.update!(current_score: 350)
+        CreditScoreEvent.create!(user: user, reason: 'default', delta: -100)
         user.reload
-      }.to change { user.current_score }.from(600).to(625)
+        expect(user.current_score).to eq(300) # Cannot go below 300
+
+        user.update!(current_score: 850)
+        CreditScoreEvent.create!(user: user, reason: 'kyc_bonus', delta: 100)
+        user.reload
+        expect(user.current_score).to eq(900) # Cannot go above 900
+      end
     end
 
-    it 'enforces credit score bounds (300-900)' do
-      user.update!(current_score: 350)
-      CreditScoreEvent.create!(user: user, reason: 'default', delta: -100)
-      user.reload
-      expect(user.current_score).to eq(300) # Cannot go below 300
+    context 'when legacy_delta_mode is disabled (default)' do
+      it 'does not automatically update user credit score' do
+        expect {
+          CreditScoreEvent.create!(user: user, reason: 'on_time_payment', delta: 25)
+          user.reload
+        }.not_to change { user.current_score }
+      end
 
-      user.update!(current_score: 850)
-      CreditScoreEvent.create!(user: user, reason: 'kyc_bonus', delta: 100)
-      user.reload
-      expect(user.current_score).to eq(900) # Cannot go above 900
+      it 'still creates the event record' do
+        expect {
+          CreditScoreEvent.create!(user: user, reason: 'on_time_payment', delta: 25)
+        }.to change(CreditScoreEvent, :count).by(1)
+      end
     end
   end
 
@@ -107,11 +136,33 @@ RSpec.describe CreditScoreEvent, type: :model do
       }.to change(CreditScoreEvent, :count).by(1)
     end
 
-    it 'updates the user credit score' do
-      expect {
-        CreditScoreEvent.record_event!(user: user, reason: 'kyc_bonus', delta: 50)
-        user.reload
-      }.to change { user.current_score }.by(50)
+    context 'when legacy_delta_mode is enabled' do
+      around do |example|
+        original_value = Rails.configuration.x.scoring.legacy_delta_mode
+        Rails.configuration.x.scoring.legacy_delta_mode = true
+
+        begin
+          example.run
+        ensure
+          Rails.configuration.x.scoring.legacy_delta_mode = original_value
+        end
+      end
+
+      it 'updates the user credit score' do
+        expect {
+          CreditScoreEvent.record_event!(user: user, reason: 'kyc_bonus', delta: 50)
+          user.reload
+        }.to change { user.current_score }.by(50)
+      end
+    end
+
+    context 'when legacy_delta_mode is disabled (default)' do
+      it 'does not update the user credit score automatically' do
+        expect {
+          CreditScoreEvent.record_event!(user: user, reason: 'kyc_bonus', delta: 50)
+          user.reload
+        }.not_to change { user.current_score }
+      end
     end
   end
 end
