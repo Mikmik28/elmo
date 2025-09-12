@@ -4,8 +4,8 @@
 Rails.configuration.x.scoring.weights = {
   payment_history: 0.35,  # on-time rate last 12 months
   utilization:     0.30,  # outstanding_principal / credit_limit
-  tenure:          0.10,  # account age
   behavior:        0.15,  # recent loan activity without delinquency
+  tenure:          0.10,  # account age
   kyc:             0.10   # bonus when kyc_approved
 }
 

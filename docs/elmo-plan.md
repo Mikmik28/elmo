@@ -322,7 +322,7 @@ end
 - `61–180 → extended`
 - `270 or 365 → longterm` _(only these are valid long‑term)_
 
-### Interest formulas (use **BigDecimal**, round **half‑up** to 2 decimal places; store in cents)
+### Interest formulas (use **BigDecimal**, compute at ≥4-dp, round **half‑even (banker's rounding)** to 2 decimal places; store in cents)
 
 - **Short‑term (1–60 days)** simple interest: `amount * (0.5/100) * (term_days/365)`
 - **Mid‑term (61–180)** monthly interest: `amount * (3.49/100) * (term_days/30.44)`

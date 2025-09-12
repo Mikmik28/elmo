@@ -125,20 +125,20 @@ end
 ### Code Organization
 
 - **Controllers**: Keep thin, delegate to service objects
-- **Services**: Business logic in `app/services/namespace/verb_noun.rb`
+- **Services**: Business logic in `app/domains/<domain>/services` (DDD-style namespacing)
 - **Models**: Focus on data integrity and relationships
 - **Jobs**: Background processing with Solid Queue
 
 ### Testing Strategy
 
-- **Framework**: Rails built-in testing framework (Minitest)
+- **Framework**: RSpec (rspec-rails) with FactoryBot & Faker; parallel enabled
 - **Parallel**: Enable parallel test execution for faster feedback
 - **Coverage**: Focus on business logic and critical paths
 - **System Tests**: Use Capybara for integration testing
 
 ### Asset Pipeline
 
-- **JavaScript**: Bun for bundling with watch mode in development
+- **JavaScript**: Importmap by default; Bun/esbuild optional for heavier bundles later
 - **CSS**: Tailwind CSS via cssbundling-rails
 - **Delivery**: Propshaft for asset delivery (Rails 8 default)
 - **Build**: Assets built to `app/assets/builds/`
