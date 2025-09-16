@@ -6,9 +6,10 @@ RSpec.describe 'API Loans', type: :request do
   let!(:user) { create(:user, :kyc_approved, otp_required_for_login: false) }
   let(:headers) { { 'Content-Type' => 'application/json' } }
 
-  # before do
-  #   sign_in user
-  # end
+  before do
+    # Use Warden's login_as for API authentication
+    login_as(user, scope: :user)
+  end
 
   describe 'POST /api/loans' do
     context 'with valid micro loan parameters' do
@@ -124,7 +125,7 @@ RSpec.describe 'API Loans', type: :request do
       it 'returns 422 with error contract' do
         post '/api/loans', params: loan_params
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
 
         json = JSON.parse(response.body)
         expect(json).to have_key('error')
@@ -147,7 +148,7 @@ RSpec.describe 'API Loans', type: :request do
       it 'returns 422 with validation error' do
         post '/api/loans', params: loan_params
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
 
         json = JSON.parse(response.body)
         expect(json['error']['code']).to eq('validation_failed')

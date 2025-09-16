@@ -20,7 +20,7 @@ class Api::LoansController < ApplicationController
     if @loan.save
       render json: loan_json(@loan), status: :created
     else
-      render json: error_response(@loan), status: :unprocessable_entity
+      render json: error_response(@loan), status: :unprocessable_content
     end
   end
 
