@@ -3,7 +3,7 @@
 class Api::LoansController < ApplicationController
   protect_from_forgery with: :null_session
   before_action :authenticate_user!
-  before_action :set_loan, only: [:show]
+  before_action :set_loan, only: [ :show ]
 
   def index
     @loans = current_user.loans.includes(:payments)
@@ -16,7 +16,7 @@ class Api::LoansController < ApplicationController
 
   def create
     @loan = current_user.loans.build(loan_params)
-    
+
     if @loan.save
       render json: loan_json(@loan), status: :created
     else

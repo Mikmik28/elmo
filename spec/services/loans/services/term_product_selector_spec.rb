@@ -7,7 +7,7 @@ RSpec.describe Loans::Services::TermProductSelector do
     subject { described_class.for(term_days) }
 
     context 'with micro loan terms (1-60 days)' do
-      [1, 30, 45, 60].each do |days|
+      [ 1, 30, 45, 60 ].each do |days|
         context "with #{days} days" do
           let(:term_days) { days }
           it { is_expected.to eq('micro') }
@@ -16,7 +16,7 @@ RSpec.describe Loans::Services::TermProductSelector do
     end
 
     context 'with extended loan terms (61-180 days)' do
-      [61, 90, 120, 150, 180].each do |days|
+      [ 61, 90, 120, 150, 180 ].each do |days|
         context "with #{days} days" do
           let(:term_days) { days }
           it { is_expected.to eq('extended') }
@@ -25,7 +25,7 @@ RSpec.describe Loans::Services::TermProductSelector do
     end
 
     context 'with longterm loan terms (270 or 365 days only)' do
-      [270, 365].each do |days|
+      [ 270, 365 ].each do |days|
         context "with #{days} days" do
           let(:term_days) { days }
           it { is_expected.to eq('longterm') }
@@ -34,10 +34,10 @@ RSpec.describe Loans::Services::TermProductSelector do
     end
 
     context 'with invalid term_days' do
-      [0, -1, 181, 200, 269, 271, 300, 366, 400].each do |days|
+      [ 0, -1, 181, 200, 269, 271, 300, 366, 400 ].each do |days|
         context "with #{days} days" do
           let(:term_days) { days }
-          
+
           it 'raises InvalidTermError' do
             expect { subject }.to raise_error(Loans::Services::TermProductSelector::InvalidTermError)
           end

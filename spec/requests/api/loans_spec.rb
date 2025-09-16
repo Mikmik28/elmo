@@ -25,7 +25,7 @@ RSpec.describe 'API Loans', type: :request do
         post '/api/loans', params: loan_params
 
         expect(response).to have_http_status(:created)
-        
+
         json = JSON.parse(response.body)
         expect(json['product']).to eq('micro')
         expect(json['term_days']).to eq(45)
@@ -39,7 +39,7 @@ RSpec.describe 'API Loans', type: :request do
 
       it 'ignores client-provided product parameter' do
         loan_params[:loan][:product] = 'longterm' # Client tries to override
-        
+
         post '/api/loans', params: loan_params
 
         expect(response).to have_http_status(:created)
@@ -62,7 +62,7 @@ RSpec.describe 'API Loans', type: :request do
         post '/api/loans', params: loan_params
 
         expect(response).to have_http_status(:created)
-        
+
         json = JSON.parse(response.body)
         expect(json['product']).to eq('extended')
         expect(json['term_days']).to eq(150)
@@ -83,7 +83,7 @@ RSpec.describe 'API Loans', type: :request do
         post '/api/loans', params: loan_params
 
         expect(response).to have_http_status(:created)
-        
+
         json = JSON.parse(response.body)
         expect(json['product']).to eq('longterm')
         expect(json['term_days']).to eq(270)
@@ -104,7 +104,7 @@ RSpec.describe 'API Loans', type: :request do
         post '/api/loans', params: loan_params
 
         expect(response).to have_http_status(:created)
-        
+
         json = JSON.parse(response.body)
         expect(json['product']).to eq('longterm')
         expect(json['term_days']).to eq(365)
@@ -125,7 +125,7 @@ RSpec.describe 'API Loans', type: :request do
         post '/api/loans', params: loan_params
 
         expect(response).to have_http_status(:unprocessable_entity)
-        
+
         json = JSON.parse(response.body)
         expect(json).to have_key('error')
         expect(json['error']['code']).to eq('validation_failed')
@@ -148,7 +148,7 @@ RSpec.describe 'API Loans', type: :request do
         post '/api/loans', params: loan_params
 
         expect(response).to have_http_status(:unprocessable_entity)
-        
+
         json = JSON.parse(response.body)
         expect(json['error']['code']).to eq('validation_failed')
         expect(json['error']['details']).to include('amount_cents')
@@ -189,7 +189,7 @@ RSpec.describe 'API Loans', type: :request do
 
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
-      
+
       # Since authentication is mocked, just verify we get loans back
       expect(json).to be_an(Array)
       if json.any?
@@ -208,7 +208,7 @@ RSpec.describe 'API Loans', type: :request do
 
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
-      
+
       expect(json['id']).to eq(loan.id)
       expect(json['product']).to eq('longterm')
       expect(json['term_days']).to eq(270)

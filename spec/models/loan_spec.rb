@@ -152,7 +152,7 @@ RSpec.describe Loan, type: :model do
     end
 
     it 'rejects invalid term_days values' do
-      invalid_terms = [0, 181, 200, 269, 271, 300, 366, 400]
+      invalid_terms = [ 0, 181, 200, 269, 271, 300, 366, 400 ]
       invalid_terms.each do |term|
         loan = build(:loan, term_days: term, product: nil)
         expect(loan).not_to be_valid, "Expected term_days #{term} to be invalid"

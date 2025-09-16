@@ -10,7 +10,7 @@ module Loans
         61..180 => "extended"
       }.freeze
 
-      LONGTERM_VALID_TERMS = [270, 365].freeze
+      LONGTERM_VALID_TERMS = [ 270, 365 ].freeze
 
       def self.for(term_days)
         new(term_days).product
@@ -22,7 +22,7 @@ module Loans
 
       def product
         return nil if @term_days.nil?
-        
+
         raise InvalidTermError, "term_days must be positive" if @term_days <= 0
 
         # Check longterm first (exact values only)

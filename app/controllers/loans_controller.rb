@@ -9,7 +9,7 @@ class LoansController < ApplicationController
 
   def create
     @loan = current_user.loans.build(loan_params)
-    
+
     if @loan.save
       redirect_to loan_path(@loan), notice: "Loan created successfully!"
     else
