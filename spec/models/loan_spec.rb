@@ -121,6 +121,51 @@ RSpec.describe Loan, type: :model do
       loan.valid?
       expect(loan.product).to eq('longterm')
     end
+
+    it 'does not override existing product' do
+      loan = build(:loan, term_days: 30, product: 'micro')
+      loan.valid?
+      expect(loan.product).to eq('micro')
+    end
+
+    it 'sets product to nil for invalid term_days' do
+      loan = build(:loan, term_days: 200, product: nil)
+      expect(loan).not_to be_valid
+      expect(loan.errors[:term_days]).to be_present
+    end
+  end
+
+  describe 'term_days validation' do
+    it 'accepts boundary values for micro (1, 60)' do
+      expect(build(:loan, term_days: 1, product: nil)).to be_valid
+      expect(build(:loan, term_days: 60, product: nil)).to be_valid
+    end
+
+    it 'accepts boundary values for extended (61, 180)' do
+      expect(build(:loan, term_days: 61, product: nil)).to be_valid
+      expect(build(:loan, term_days: 180, product: nil)).to be_valid
+    end
+
+    it 'accepts only 270 and 365 for longterm' do
+      expect(build(:loan, term_days: 270, product: nil)).to be_valid
+      expect(build(:loan, term_days: 365, product: nil)).to be_valid
+    end
+
+    it 'rejects invalid term_days values' do
+      invalid_terms = [0, 181, 200, 269, 271, 300, 366, 400]
+      invalid_terms.each do |term|
+        loan = build(:loan, term_days: term, product: nil)
+        expect(loan).not_to be_valid, "Expected term_days #{term} to be invalid"
+        expect(loan.errors[:term_days]).to be_present
+      end
+    end
+
+    it 'ignores client-supplied product mismatches' do
+      # Client tries to force micro with longterm term_days
+      loan = build(:loan, term_days: 270, product: 'micro')
+      expect(loan).not_to be_valid
+      expect(loan.errors[:term_days]).to include('invalid for product type micro')
+    end
   end
 
   describe 'money methods' do
