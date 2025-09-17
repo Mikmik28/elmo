@@ -58,9 +58,10 @@ class Loan < ApplicationRecord
   validates :penalty_accrued_cents, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validate :longterm_term_validation
   validate :due_date_after_creation
+  validate :valid_term_days_for_product
 
   # Callbacks
-  before_validation :auto_assign_product, on: :create
+  before_validation :auto_assign_product_from_term, on: :create
   before_validation :set_principal_outstanding, on: :create
   before_validation :calculate_due_date, on: :create
 
@@ -121,18 +122,14 @@ class Loan < ApplicationRecord
 
   private
 
-  def auto_assign_product
-    return if product.present?
+  def auto_assign_product_from_term
+    return if product.present? || term_days.blank?
 
-    self.product = case term_days
-    when 1..60
-                    "micro"
-    when 61..180
-                    "extended"
-    when 270, 365
-                    "longterm"
-    else
-                    nil
+    begin
+      self.product = Loans::Services::TermProductSelector.for(term_days)
+    rescue Loans::Services::TermProductSelector::InvalidTermError
+      # Let validation catch the invalid term_days
+      self.product = nil
     end
   end
 
@@ -141,6 +138,19 @@ class Loan < ApplicationRecord
 
     unless [ 270, 365 ].include?(term_days)
       errors.add(:term_days, "must be 270 or 365 days for longterm loans")
+    end
+  end
+
+  def valid_term_days_for_product
+    return if term_days.blank?
+
+    begin
+      expected_product = Loans::Services::TermProductSelector.for(term_days)
+      if product.present? && product != expected_product
+        errors.add(:term_days, "invalid for product type #{product}")
+      end
+    rescue Loans::Services::TermProductSelector::InvalidTermError => e
+      errors.add(:term_days, e.message.split(": ").last)
     end
   end
 

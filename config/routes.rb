@@ -35,6 +35,14 @@ Rails.application.routes.draw do
   get "scoring/preview", to: "scoring/previews#show", as: :scoring_preview
   post "scoring/recompute", to: "scoring/previews#create", as: :scoring_recompute
 
+  # Loan routes
+  resources :loans, only: [ :show, :new, :create ]
+
+  # API routes
+  namespace :api do
+    resources :loans, only: [ :index, :show, :create ]
+  end
+
   # Letter Opener routes (development only)
   if Rails.env.development?
     mount LetterOpenerWeb::Engine, at: "/letter_opener"
