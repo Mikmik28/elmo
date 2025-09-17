@@ -46,12 +46,12 @@ RSpec.describe Loan, type: :model do
 
     context 'longterm term validation' do
       it 'allows 270 days for longterm loans' do
-        loan = build(:loan, product: 'longterm', term_days: 270)
+        loan = build(:loan, product: 'longterm', term_days: 270, amount_cents: 30_000_00)
         expect(loan).to be_valid
       end
 
       it 'allows 365 days for longterm loans' do
-        loan = build(:loan, product: 'longterm', term_days: 365)
+        loan = build(:loan, product: 'longterm', term_days: 365, amount_cents: 30_000_00)
         expect(loan).to be_valid
       end
 
@@ -61,11 +61,97 @@ RSpec.describe Loan, type: :model do
         expect(loan.errors[:term_days]).to include('must be 270 or 365 days for longterm loans')
       end
     end
+
+    context 'amount limits validation' do
+      context 'micro loans (₱1,000 - ₱15,000)' do
+        it 'accepts minimum amount' do
+          loan = build(:loan, product: 'micro', amount_cents: 1_000_00)
+          expect(loan).to be_valid
+        end
+
+        it 'accepts maximum amount' do
+          loan = build(:loan, product: 'micro', amount_cents: 15_000_00)
+          expect(loan).to be_valid
+        end
+
+        it 'rejects amount below minimum' do
+          loan = build(:loan, product: 'micro', amount_cents: 999_00)
+          expect(loan).not_to be_valid
+          expect(loan.errors[:amount_cents]).to include('must be at least ₱1000 for micro loans')
+        end
+
+        it 'rejects amount above maximum' do
+          loan = build(:loan, product: 'micro', amount_cents: 15_001_00)
+          expect(loan).not_to be_valid
+          expect(loan.errors[:amount_cents]).to include('must not exceed ₱15000 for micro loans')
+        end
+      end
+
+      context 'extended loans (₱10,000 - ₱35,000)' do
+        it 'accepts minimum amount' do
+          loan = build(:loan, product: 'extended', term_days: 90, amount_cents: 10_000_00)
+          expect(loan).to be_valid
+        end
+
+        it 'accepts maximum amount' do
+          loan = build(:loan, product: 'extended', term_days: 120, amount_cents: 35_000_00)
+          expect(loan).to be_valid
+        end
+
+        it 'rejects amount below minimum' do
+          loan = build(:loan, product: 'extended', term_days: 90, amount_cents: 9_999_00)
+          expect(loan).not_to be_valid
+          expect(loan.errors[:amount_cents]).to include('must be at least ₱10000 for extended loans')
+        end
+
+        it 'rejects amount above maximum' do
+          loan = build(:loan, product: 'extended', term_days: 120, amount_cents: 35_001_00)
+          expect(loan).not_to be_valid
+          expect(loan.errors[:amount_cents]).to include('must not exceed ₱35000 for extended loans')
+        end
+      end
+
+      context 'longterm loans (₱25,000 - ₱75,000)' do
+        it 'accepts minimum amount' do
+          loan = build(:loan, product: 'longterm', amount_cents: 25_000_00, term_days: 270)
+          expect(loan).to be_valid
+        end
+
+        it 'accepts maximum amount' do
+          loan = build(:loan, product: 'longterm', amount_cents: 75_000_00, term_days: 365)
+          expect(loan).to be_valid
+        end
+
+        it 'rejects amount below minimum' do
+          loan = build(:loan, product: 'longterm', amount_cents: 24_999_00, term_days: 270)
+          expect(loan).not_to be_valid
+          expect(loan.errors[:amount_cents]).to include('must be at least ₱25000 for longterm loans')
+        end
+
+        it 'rejects amount above maximum' do
+          loan = build(:loan, product: 'longterm', amount_cents: 75_001_00, term_days: 365)
+          expect(loan).not_to be_valid
+          expect(loan.errors[:amount_cents]).to include('must not exceed ₱75000 for longterm loans')
+        end
+      end
+
+      it 'skips validation when amount_cents is blank' do
+        loan = build(:loan, amount_cents: nil)
+        loan.valid?
+        expect(loan.errors[:amount_cents]).not_to include(/must be at least/)
+      end
+
+      it 'skips validation when product is blank' do
+        loan = build(:loan, product: nil, amount_cents: 100_00, term_days: nil)
+        loan.valid?
+        expect(loan.errors[:amount_cents]).not_to include(/must be at least/)
+      end
+    end
   end
 
   describe 'enums' do
     it { should define_enum_for(:product).with_values(micro: 'micro', extended: 'extended', longterm: 'longterm').backed_by_column_of_type(:string).with_suffix }
-    it { should define_enum_for(:state).with_values(pending: 'pending', approved: 'approved', disbursed: 'disbursed', paid: 'paid', overdue: 'overdue', defaulted: 'defaulted').backed_by_column_of_type(:string).with_prefix(:state) }
+    it { should define_enum_for(:state).with_values(pending: 'pending', approved: 'approved', rejected: 'rejected', disbursed: 'disbursed', paid: 'paid', overdue: 'overdue', defaulted: 'defaulted').backed_by_column_of_type(:string).with_prefix(:state) }
   end
 
   describe 'enum predicates' do
@@ -147,8 +233,8 @@ RSpec.describe Loan, type: :model do
     end
 
     it 'accepts only 270 and 365 for longterm' do
-      expect(build(:loan, term_days: 270, product: nil)).to be_valid
-      expect(build(:loan, term_days: 365, product: nil)).to be_valid
+      expect(build(:loan, term_days: 270, product: nil, amount_cents: 30_000_00)).to be_valid
+      expect(build(:loan, term_days: 365, product: nil, amount_cents: 30_000_00)).to be_valid
     end
 
     it 'rejects invalid term_days values' do
@@ -171,23 +257,46 @@ RSpec.describe Loan, type: :model do
   describe 'money methods' do
     let(:loan) { create(:loan, amount_cents: 10000_00) }
 
-    it 'converts amount_cents to pesos' do
-      expect(loan.amount_in_pesos).to eq(10000.0)
+    it 'converts amount_cents to pesos using BigDecimal' do
+      expect(loan.amount_in_pesos).to eq(BigDecimal('10000'))
+      expect(loan.amount_in_pesos).to be_a(BigDecimal)
     end
 
-    it 'sets amount from pesos' do
-      loan.amount_in_pesos = 15000.0
-      expect(loan.amount_cents).to eq(15000_00)
+    it 'sets amount from pesos using BigDecimal precision' do
+      loan.amount_in_pesos = 15000.50
+      expect(loan.amount_cents).to eq(15000_50)
     end
 
-    it 'calculates total outstanding' do
+    it 'sets amount from string to maintain precision' do
+      loan.amount_in_pesos = '15000.25'
+      expect(loan.amount_cents).to eq(15000_25)
+    end
+
+    it 'calculates total outstanding using BigDecimal' do
       loan.update!(
         principal_outstanding_cents: 5000_00,
         interest_accrued_cents: 200_00,
         penalty_accrued_cents: 100_00
       )
       expect(loan.total_outstanding_cents).to eq(5300_00)
-      expect(loan.total_outstanding_in_pesos).to eq(5300.0)
+      expect(loan.total_outstanding_in_pesos).to eq(BigDecimal('5300'))
+      expect(loan.total_outstanding_in_pesos).to be_a(BigDecimal)
+    end
+
+    it 'converts all monetary fields to BigDecimal' do
+      loan.update!(
+        principal_outstanding_cents: 5000_00,
+        interest_accrued_cents: 200_00,
+        penalty_accrued_cents: 100_00
+      )
+      
+      expect(loan.principal_outstanding_in_pesos).to be_a(BigDecimal)
+      expect(loan.interest_accrued_in_pesos).to be_a(BigDecimal)
+      expect(loan.penalty_accrued_in_pesos).to be_a(BigDecimal)
+      
+      expect(loan.principal_outstanding_in_pesos).to eq(BigDecimal('5000'))
+      expect(loan.interest_accrued_in_pesos).to eq(BigDecimal('200'))
+      expect(loan.penalty_accrued_in_pesos).to eq(BigDecimal('100'))
     end
   end
 
@@ -223,7 +332,7 @@ RSpec.describe Loan, type: :model do
 
         loan.update_columns(
           state: 'disbursed',
-          due_on: Date.current - 1.day,
+          due_on: Time.zone.today - 1.day,
           principal_outstanding_cents: 1000_00
         )
         expect(loan.overdue?).to be true
@@ -235,12 +344,37 @@ RSpec.describe Loan, type: :model do
 
         loan.update_columns(
           state: 'disbursed',
-          due_on: Date.current - 1.day,
+          due_on: Time.zone.today - 1.day,
           principal_outstanding_cents: 0,
           interest_accrued_cents: 0,
           penalty_accrued_cents: 0
         )
         expect(loan.overdue?).to be false
+      end
+
+      it 'uses Manila timezone for due date comparison' do
+        allow_any_instance_of(Loan).to receive(:due_date_after_creation)
+        
+        # Simulate a scenario where Manila time has moved to next day but UTC hasn't
+        manila_today = Time.zone.today
+        loan.update_columns(
+          state: 'disbursed',
+          due_on: manila_today - 1.day,
+          principal_outstanding_cents: 1000_00
+        )
+        expect(loan.overdue?).to be true
+      end
+    end
+
+    describe '#outstanding_balance_cents' do
+      it 'is an alias for total_outstanding_cents' do
+        loan.update!(
+          principal_outstanding_cents: 5000_00,
+          interest_accrued_cents: 200_00,
+          penalty_accrued_cents: 100_00
+        )
+        expect(loan.outstanding_balance_cents).to eq(5300_00)
+        expect(loan.outstanding_balance_cents).to eq(loan.total_outstanding_cents)
       end
     end
   end
@@ -257,7 +391,7 @@ RSpec.describe Loan, type: :model do
     it 'overdue_today scope finds disbursed loans past due' do
       # Create a loan with past due date using factories and then update columns to bypass validation
       overdue_today = create(:loan, :disbursed)
-      overdue_today.update_columns(due_on: Date.current - 1.day)
+      overdue_today.update_columns(due_on: Time.zone.today - 1.day)
 
       expect(Loan.overdue_today).to include(overdue_today)
     end
