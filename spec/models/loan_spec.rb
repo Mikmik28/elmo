@@ -289,11 +289,11 @@ RSpec.describe Loan, type: :model do
         interest_accrued_cents: 200_00,
         penalty_accrued_cents: 100_00
       )
-      
+
       expect(loan.principal_outstanding_in_pesos).to be_a(BigDecimal)
       expect(loan.interest_accrued_in_pesos).to be_a(BigDecimal)
       expect(loan.penalty_accrued_in_pesos).to be_a(BigDecimal)
-      
+
       expect(loan.principal_outstanding_in_pesos).to eq(BigDecimal('5000'))
       expect(loan.interest_accrued_in_pesos).to eq(BigDecimal('200'))
       expect(loan.penalty_accrued_in_pesos).to eq(BigDecimal('100'))
@@ -354,7 +354,7 @@ RSpec.describe Loan, type: :model do
 
       it 'uses Manila timezone for due date comparison' do
         allow_any_instance_of(Loan).to receive(:due_date_after_creation)
-        
+
         # Simulate a scenario where Manila time has moved to next day but UTC hasn't
         manila_today = Time.zone.today
         loan.update_columns(

@@ -9,9 +9,9 @@ module Loans
       def approve!(loan, actor: nil, correlation_id: SecureRandom.uuid)
         with_transaction_and_lock(loan) do
           guard_can_approve!(loan)
-          
+
           loan.update!(state: "approved")
-          
+
           OutboxEvent.publish!(
             name: "loan.approved.v1",
             aggregate: loan,
@@ -40,16 +40,16 @@ module Loans
 
         with_transaction_and_lock(loan) do
           guard_can_disburse!(loan)
-          
+
           # Gateway call to actually disburse funds
           gateway_ref = gateway.disburse(
             amount_cents: loan.amount_cents,
             recipient: loan.user
           )
-          
+
           # Update loan state
           loan.update!(state: "disbursed")
-          
+
           # Create pending payment record
           loan.payments.create!(
             amount_cents: loan.amount_cents,
@@ -57,7 +57,7 @@ module Loans
             gateway_ref: gateway_ref,
             posted_at: Time.current
           )
-          
+
           OutboxEvent.publish!(
             name: "loan.disbursed.v1",
             aggregate: loan,
@@ -79,9 +79,9 @@ module Loans
       def reject!(loan, actor:, reason:, correlation_id: SecureRandom.uuid)
         with_transaction_and_lock(loan) do
           guard_can_reject!(loan)
-          
+
           loan.update!(state: "rejected")
-          
+
           OutboxEvent.publish!(
             name: "loan.rejected.v1",
             aggregate: loan,
@@ -105,9 +105,9 @@ module Loans
       def mark_as_paid!(loan, correlation_id: SecureRandom.uuid)
         with_transaction_and_lock(loan) do
           guard_can_mark_as_paid!(loan)
-          
+
           loan.update!(state: "paid")
-          
+
           OutboxEvent.publish!(
             name: "loan.paid.v1",
             aggregate: loan,
@@ -128,12 +128,12 @@ module Loans
       def mark_as_overdue!(loan, correlation_id: SecureRandom.uuid)
         with_transaction_and_lock(loan) do
           guard_can_mark_as_overdue!(loan)
-          
+
           # Calculate days overdue before changing state
           days_overdue = loan.due_on ? (Time.zone.today - loan.due_on).to_i : 0
-          
+
           loan.update!(state: "overdue")
-          
+
           OutboxEvent.publish!(
             name: "loan.overdue.v1",
             aggregate: loan,
@@ -155,9 +155,9 @@ module Loans
       def mark_as_defaulted!(loan, correlation_id: SecureRandom.uuid)
         with_transaction_and_lock(loan) do
           guard_can_mark_as_defaulted!(loan)
-          
+
           loan.update!(state: "defaulted")
-          
+
           OutboxEvent.publish!(
             name: "loan.defaulted.v1",
             aggregate: loan,
@@ -236,7 +236,7 @@ module Loans
 
         # Check if loan is actually overdue by business logic
         days_past_due = loan.due_on ? (Time.zone.today - loan.due_on).to_i : 0
-        
+
         unless days_past_due > 30
           raise GuardFailedError, "Loan has not reached defaulted threshold (#{days_past_due} days overdue)"
         end

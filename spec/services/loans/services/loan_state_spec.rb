@@ -15,13 +15,13 @@ RSpec.describe Loans::Services::LoanState, type: :service do
     context 'when loan is in pending state' do
       it 'transitions loan to rejected state' do
         service.reject!(loan, actor: actor, reason: reason, correlation_id: correlation_id)
-        
+
         expect(loan.reload.state).to eq('rejected')
       end
 
       it 'emits loan.rejected.v1 event' do
         service.reject!(loan, actor: actor, reason: reason, correlation_id: correlation_id)
-        
+
         event = OutboxEvent.last
         expect(event.name).to eq('loan.rejected.v1')
         expect(event.aggregate_id).to eq(loan.id)
@@ -38,7 +38,7 @@ RSpec.describe Loans::Services::LoanState, type: :service do
     context 'when loan is not in pending state' do
       it 'raises InvalidStateTransitionError' do
         loan.update!(state: 'approved')
-        
+
         expect {
           service.reject!(loan, actor: actor, reason: reason, correlation_id: correlation_id)
         }.to raise_error(
@@ -62,13 +62,13 @@ RSpec.describe Loans::Services::LoanState, type: :service do
     context 'when loan is overdue beyond threshold' do
       it 'transitions loan to defaulted state' do
         service.mark_as_defaulted!(overdue_loan, correlation_id: correlation_id)
-        
+
         expect(overdue_loan.reload.state).to eq('defaulted')
       end
 
       it 'emits loan.defaulted.v1 event' do
         service.mark_as_defaulted!(overdue_loan, correlation_id: correlation_id)
-        
+
         event = OutboxEvent.last
         expect(event.name).to eq('loan.defaulted.v1')
         expect(event.aggregate_id).to eq(overdue_loan.id)
@@ -118,13 +118,13 @@ RSpec.describe Loans::Services::LoanState, type: :service do
     context 'when all guards pass' do
       it 'transitions loan to approved state' do
         service.approve!(loan, correlation_id: correlation_id)
-        
+
         expect(loan.reload.state).to eq('approved')
       end
 
       it 'emits loan.approved.v1 event' do
         service.approve!(loan, correlation_id: correlation_id)
-        
+
         event = OutboxEvent.last
         expect(event.name).to eq('loan.approved.v1')
         expect(event.aggregate_id).to eq(loan.id)
@@ -142,7 +142,7 @@ RSpec.describe Loans::Services::LoanState, type: :service do
       it 'includes actor in event headers when provided' do
         actor = create(:user)
         service.approve!(loan, actor: actor, correlation_id: correlation_id)
-        
+
         event = OutboxEvent.last
         expect(event.headers['actor_id']).to eq(actor.id)
       end
@@ -151,7 +151,7 @@ RSpec.describe Loans::Services::LoanState, type: :service do
     context 'when loan is not in pending state' do
       it 'raises InvalidStateTransitionError' do
         loan.update!(state: 'approved')
-        
+
         expect {
           service.approve!(loan, correlation_id: correlation_id)
         }.to raise_error(
@@ -201,7 +201,7 @@ RSpec.describe Loans::Services::LoanState, type: :service do
     context 'when all guards pass' do
       it 'transitions loan to disbursed state' do
         service.disburse!(loan, gateway: gateway, idem_key: idem_key, correlation_id: correlation_id)
-        
+
         expect(loan.reload.state).to eq('disbursed')
       end
 
@@ -210,13 +210,13 @@ RSpec.describe Loans::Services::LoanState, type: :service do
           amount_cents: loan.amount_cents,
           recipient: loan.user
         ).and_return(gateway_ref)
-        
+
         service.disburse!(loan, gateway: gateway, idem_key: idem_key, correlation_id: correlation_id)
       end
 
       it 'creates pending payment record with gateway reference' do
         service.disburse!(loan, gateway: gateway, idem_key: idem_key, correlation_id: correlation_id)
-        
+
         payment = loan.payments.last
         expect(payment.amount_cents).to eq(loan.amount_cents)
         expect(payment.state).to eq('pending')
@@ -226,7 +226,7 @@ RSpec.describe Loans::Services::LoanState, type: :service do
 
       it 'emits loan.disbursed.v1 event' do
         service.disburse!(loan, gateway: gateway, idem_key: idem_key, correlation_id: correlation_id)
-        
+
         event = OutboxEvent.last
         expect(event.name).to eq('loan.disbursed.v1')
         expect(event.aggregate_id).to eq(loan.id)
@@ -242,7 +242,7 @@ RSpec.describe Loans::Services::LoanState, type: :service do
 
       it 'creates idempotency key record' do
         service.disburse!(loan, gateway: gateway, idem_key: idem_key, correlation_id: correlation_id)
-        
+
         idem_record = IdempotencyKey.find_by(key: idem_key, scope: 'loans/disburse')
         expect(idem_record).to be_present
         expect(idem_record.resource).to eq(loan)
@@ -301,7 +301,7 @@ RSpec.describe Loans::Services::LoanState, type: :service do
         # This tests that with_lock prevents race conditions
         threads = []
         results = []
-        
+
         2.times do
           threads << Thread.new do
             begin
@@ -312,9 +312,9 @@ RSpec.describe Loans::Services::LoanState, type: :service do
             end
           end
         end
-        
+
         threads.each(&:join)
-        
+
         # One should succeed, the other might fail due to idempotency or state
         expect(results).to include(:success)
         expect(loan.reload.state).to eq('disbursed')
@@ -335,13 +335,13 @@ RSpec.describe Loans::Services::LoanState, type: :service do
     context 'when outstanding balance is zero' do
       it 'transitions loan to paid state' do
         service.mark_as_paid!(loan, correlation_id: correlation_id)
-        
+
         expect(loan.reload.state).to eq('paid')
       end
 
       it 'emits loan.paid.v1 event' do
         service.mark_as_paid!(loan, correlation_id: correlation_id)
-        
+
         event = OutboxEvent.last
         expect(event.name).to eq('loan.paid.v1')
         expect(event.aggregate_id).to eq(loan.id)
@@ -381,13 +381,13 @@ RSpec.describe Loans::Services::LoanState, type: :service do
     context 'when loan is overdue by business logic' do
       it 'transitions loan to overdue state' do
         service.mark_as_overdue!(loan, correlation_id: correlation_id)
-        
+
         expect(loan.reload.state).to eq('overdue')
       end
 
       it 'emits loan.overdue.v1 event' do
         service.mark_as_overdue!(loan, correlation_id: correlation_id)
-        
+
         event = OutboxEvent.last
         expect(event.name).to eq('loan.overdue.v1')
         expect(event.aggregate_id).to eq(loan.id)
@@ -438,7 +438,7 @@ RSpec.describe Loans::Services::LoanState, type: :service do
       # Test that state transitions are atomic and thread-safe
       threads = []
       errors = []
-      
+
       5.times do |i|
         threads << Thread.new do
           begin
@@ -449,9 +449,9 @@ RSpec.describe Loans::Services::LoanState, type: :service do
           end
         end
       end
-      
+
       threads.each(&:join)
-      
+
       # Only one should succeed
       expect(loan.reload.state).to eq('approved')
       expect(errors.length).to eq(4) # 4 should fail due to state check
