@@ -26,10 +26,10 @@ RSpec.describe 'Migration roundtrip and money precision tests', type: :model do
     it 'stores and retrieves peso amounts with proper precision' do
       user = create(:user)
 
-      # Test large amounts (millions)
-      loan = create(:loan, user: user, amount_cents: 1_500_000_00)
-      expect(loan.amount_in_pesos).to eq(1_500_000.0)
-      expect(loan.amount_cents).to eq(1_500_000_00)
+      # Test large amounts - use longterm product with valid amount
+      loan = create(:loan, user: user, amount_cents: 50_000_00, term_days: 270, product: nil)
+      expect(loan.amount_in_pesos).to eq(50_000.0)
+      expect(loan.amount_cents).to eq(50_000_00)
 
       # Test small amounts (centavos)
       payment = create(:payment, loan: loan, amount_cents: 1_25)
@@ -40,7 +40,7 @@ RSpec.describe 'Migration roundtrip and money precision tests', type: :model do
       loan.reload
       payment.reload
 
-      expect(loan.amount_in_pesos).to eq(1_500_000.0)
+      expect(loan.amount_in_pesos).to eq(50_000.0)
       expect(payment.amount_in_pesos).to eq(1.25)
     end
 
@@ -48,15 +48,15 @@ RSpec.describe 'Migration roundtrip and money precision tests', type: :model do
       user = create(:user, credit_limit_cents: 100_000_00)
       expect(user.credit_limit_in_pesos).to eq(100_000.0)
 
-      loan = create(:loan, user: user, amount_cents: 50_000_00)
-      expect(loan.principal_outstanding_cents).to eq(50_000_00)
-      expect(loan.principal_outstanding_in_pesos).to eq(50_000.0)
+      loan = create(:loan, user: user, amount_cents: 30_000_00, term_days: 270, product: nil)
+      expect(loan.principal_outstanding_cents).to eq(30_000_00)
+      expect(loan.principal_outstanding_in_pesos).to eq(30_000.0)
 
       # After database roundtrip
       user.reload
       loan.reload
       expect(user.credit_limit_in_pesos).to eq(100_000.0)
-      expect(loan.principal_outstanding_in_pesos).to eq(50_000.0)
+      expect(loan.principal_outstanding_in_pesos).to eq(30_000.0)
     end
   end
 
@@ -124,11 +124,11 @@ RSpec.describe 'Migration roundtrip and money precision tests', type: :model do
       expect(micro_loan.product).to eq("micro")
 
       # Extended loan (61-180 days)
-      extended_loan = create(:loan, user: user, term_days: 90, amount_cents: 50_000_00, product: nil)
+      extended_loan = create(:loan, user: user, term_days: 90, amount_cents: 25_000_00, product: nil)
       expect(extended_loan.product).to eq("extended")
 
       # Long-term loan (270 or 365 days only)
-      longterm_loan = create(:loan, user: user, term_days: 270, amount_cents: 100_000_00, product: nil)
+      longterm_loan = create(:loan, user: user, term_days: 270, amount_cents: 50_000_00, product: nil)
       expect(longterm_loan.product).to eq("longterm")
     end
 

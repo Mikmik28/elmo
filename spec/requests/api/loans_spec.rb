@@ -74,7 +74,7 @@ RSpec.describe 'API Loans', type: :request do
       let(:loan_params) do
         {
           loan: {
-            amount_cents: 2000000,
+            amount_cents: 3000000, # ₱30,000 - within longterm range ₱25,000-₱75,000
             term_days: 270
           }
         }
@@ -95,7 +95,7 @@ RSpec.describe 'API Loans', type: :request do
       let(:loan_params) do
         {
           loan: {
-            amount_cents: 2000000,
+            amount_cents: 3000000, # ₱30,000 - within longterm range ₱25,000-₱75,000
             term_days: 365
           }
         }
@@ -163,9 +163,16 @@ RSpec.describe 'API Loans', type: :request do
         { term_days: 180, expected_product: 'extended' }
       ].each do |test_case|
         it "correctly assigns #{test_case[:expected_product]} for #{test_case[:term_days]} days" do
+          # Use appropriate amount for each product
+          amount_cents = case test_case[:expected_product]
+          when 'micro' then 500000 # ₱5,000
+          when 'extended' then 1500000 # ₱15,000
+          when 'longterm' then 3000000 # ₱30,000
+          end
+
           loan_params = {
             loan: {
-              amount_cents: 500000,
+              amount_cents: amount_cents,
               term_days: test_case[:term_days]
             }
           }
@@ -202,7 +209,7 @@ RSpec.describe 'API Loans', type: :request do
   end
 
   describe 'GET /api/loans/:id' do
-    let!(:loan) { create(:loan, user: user, term_days: 270, product: nil) }
+    let!(:loan) { create(:loan, user: user, term_days: 270, amount_cents: 3000000, product: nil) }
 
     it 'returns loan details' do
       get "/api/loans/#{loan.id}"

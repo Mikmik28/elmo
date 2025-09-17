@@ -39,6 +39,7 @@ class Loan < ApplicationRecord
   enum :state, {
     pending: "pending",
     approved: "approved",
+    rejected: "rejected",
     disbursed: "disbursed",
     paid: "paid",
     overdue: "overdue",
@@ -47,6 +48,13 @@ class Loan < ApplicationRecord
 
   # Create unprefixed aliases for state predicates (e.g., pending?, paid?)
   alias_unprefixed_enum_predicates :state
+
+  # Product-specific amount limits (in cents)
+  PRODUCT_AMOUNT_LIMITS = {
+    "micro" => { min: 1_000_00, max: 15_000_00 },     # ₱1,000 - ₱15,000
+    "extended" => { min: 10_000_00, max: 35_000_00 }, # ₱10,000 - ₱35,000
+    "longterm" => { min: 25_000_00, max: 75_000_00 }  # ₱25,000 - ₱75,000
+  }.freeze
 
   # Validations
   validates :amount_cents, presence: true, numericality: { greater_than: 0 }
@@ -59,6 +67,7 @@ class Loan < ApplicationRecord
   validate :longterm_term_validation
   validate :due_date_after_creation
   validate :valid_term_days_for_product
+  validate :amount_within_product_limits
 
   # Callbacks
   before_validation :auto_assign_product_from_term, on: :create
@@ -67,30 +76,30 @@ class Loan < ApplicationRecord
 
   # Scopes
   scope :active, -> { where(state: %w[disbursed overdue]) }
-  scope :overdue_today, -> { where(state: "disbursed").where("due_on < ?", Date.current) }
-  scope :due_soon, ->(days = 3) { where(state: "disbursed").where(due_on: Date.current..Date.current + days.days) }
+  scope :overdue_today, -> { where(state: "disbursed").where("due_on < ?", Time.zone.today) }
+  scope :due_soon, ->(days = 3) { where(state: "disbursed").where(due_on: Time.zone.today..Time.zone.today + days.days) }
   scope :on_time, -> { where(state: "paid").joins(:payments).where("payments.created_at <= loans.due_on") }
   scope :overdue_recent, ->(days = 90) { where(state: %w[overdue defaulted]).where("updated_at >= ?", days.days.ago) }
 
   # Money methods
   def amount_in_pesos
-    amount_cents / 100.0
+    BigDecimal(amount_cents) / 100
   end
 
   def amount_in_pesos=(amount)
-    self.amount_cents = (amount.to_f * 100).to_i
+    self.amount_cents = (BigDecimal(amount.to_s) * 100).to_i
   end
 
   def principal_outstanding_in_pesos
-    principal_outstanding_cents / 100.0
+    BigDecimal(principal_outstanding_cents) / 100
   end
 
   def interest_accrued_in_pesos
-    interest_accrued_cents / 100.0
+    BigDecimal(interest_accrued_cents) / 100
   end
 
   def penalty_accrued_in_pesos
-    penalty_accrued_cents / 100.0
+    BigDecimal(penalty_accrued_cents) / 100
   end
 
   def total_outstanding_cents
@@ -98,22 +107,26 @@ class Loan < ApplicationRecord
   end
 
   def total_outstanding_in_pesos
-    total_outstanding_cents / 100.0
+    BigDecimal(total_outstanding_cents) / 100
   end
+
+  # Alias for outstanding_balance_cents to match interface requirement
+  alias_method :outstanding_balance_cents, :total_outstanding_cents
 
   # State predicates
   def overdue?
-    disbursed? && due_on && due_on < Date.current && total_outstanding_cents > 0
+    # Manila timezone-aware overdue check
+    disbursed? && due_on && due_on < Time.zone.today && total_outstanding_cents > 0
   end
 
   def defaulted_threshold_reached?
-    overdue? && (Date.current - due_on).to_i > 30
+    overdue? && (Time.zone.today - due_on).to_i > 30
   end
 
   # Business logic
   def days_overdue
     return 0 unless overdue?
-    (Date.current - due_on).to_i
+    (Time.zone.today - due_on).to_i
   end
 
   def can_be_approved?
@@ -156,8 +169,9 @@ class Loan < ApplicationRecord
 
   def due_date_after_creation
     return unless due_on && created_at
+    return if persisted? && (state_overdue? || state_defaulted? || state_paid?)
 
-    if due_on <= Date.current
+    if due_on <= Time.zone.today
       errors.add(:due_on, "must be in the future")
     end
   end
@@ -169,6 +183,22 @@ class Loan < ApplicationRecord
   def calculate_due_date
     return unless term_days
 
-    self.due_on = Date.current + term_days.days
+    # Use Manila timezone (Time.zone.today) while storing in UTC for database
+    self.due_on = Time.zone.today + term_days.days
+  end
+
+  def amount_within_product_limits
+    return if amount_cents.blank? || product.blank?
+
+    limits = PRODUCT_AMOUNT_LIMITS[product]
+    return unless limits
+
+    if amount_cents < limits[:min]
+      min_pesos = BigDecimal(limits[:min]) / 100
+      errors.add(:amount_cents, "must be at least ₱#{min_pesos.to_i} for #{product} loans")
+    elsif amount_cents > limits[:max]
+      max_pesos = BigDecimal(limits[:max]) / 100
+      errors.add(:amount_cents, "must not exceed ₱#{max_pesos.to_i} for #{product} loans")
+    end
   end
 end

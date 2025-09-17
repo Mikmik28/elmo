@@ -54,15 +54,15 @@ RSpec.describe 'Core schema functionality', type: :model do
     it 'validates longterm constraints' do
       user = create(:user)
 
-      # Valid longterm terms
-      valid_loan = build(:loan, user: user, term_days: 270, product: "longterm")
+      # Valid longterm terms - use valid amount for longterm loans (₱25,000-₱75,000)
+      valid_loan = build(:loan, user: user, term_days: 270, amount_cents: 30_000_00, product: "longterm")
       expect(valid_loan).to be_valid
 
-      valid_loan2 = build(:loan, user: user, term_days: 365, product: "longterm")
+      valid_loan2 = build(:loan, user: user, term_days: 365, amount_cents: 30_000_00, product: "longterm")
       expect(valid_loan2).to be_valid
 
       # Invalid longterm terms
-      invalid_loan = build(:loan, user: user, term_days: 300, product: "longterm")
+      invalid_loan = build(:loan, user: user, term_days: 300, amount_cents: 30_000_00, product: "longterm")
       expect(invalid_loan).not_to be_valid
       expect(invalid_loan.errors[:term_days]).to include('must be 270 or 365 days for longterm loans')
     end

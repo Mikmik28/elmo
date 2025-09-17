@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_11_154358) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_17_181705) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -108,7 +108,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_11_154358) do
     t.check_constraint "amount_cents > 0", name: "loans_amount_positive"
     t.check_constraint "product::text <> 'longterm'::text OR (term_days = ANY (ARRAY[270, 365]))", name: "loans_longterm_term_validation"
     t.check_constraint "product::text = ANY (ARRAY['micro'::character varying, 'extended'::character varying, 'longterm'::character varying]::text[])", name: "loans_valid_product"
-    t.check_constraint "state::text = ANY (ARRAY['pending'::character varying, 'approved'::character varying, 'disbursed'::character varying, 'paid'::character varying, 'overdue'::character varying, 'defaulted'::character varying]::text[])", name: "loans_valid_state"
+    t.check_constraint "state::text = ANY (ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying, 'disbursed'::character varying, 'paid'::character varying, 'overdue'::character varying, 'defaulted'::character varying]::text[])", name: "loans_valid_state"
     t.check_constraint "term_days > 0", name: "loans_term_positive"
   end
 
