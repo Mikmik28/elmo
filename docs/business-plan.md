@@ -228,7 +228,7 @@ _"eLMo gives first-time and repeat borrowers instant, transparent micro-loans wi
 
 **Core Operations**:
 
-1. **KYC Processing**: 24-48 hour turnaround
+1. **KYC Processing**: Instant or <10 minutes via vendor; 24–48h manual fallback only
 2. **Loan Underwriting**: Real-time automated decisions
 3. **Disbursement**: < 2 minutes via digital wallets
 4. **Collections**: Automated reminders + human intervention
