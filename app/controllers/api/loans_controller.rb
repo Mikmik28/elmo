@@ -2,7 +2,7 @@
 
 class Api::LoansController < ApplicationController
   include Pundit::Authorization
-  
+
   protect_from_forgery with: :null_session
   before_action :authenticate_user!
   before_action :set_loan, only: [ :show ]
@@ -18,7 +18,7 @@ class Api::LoansController < ApplicationController
 
   def create
     # Require Idempotency-Key header
-    idempotency_key = request.headers['Idempotency-Key']
+    idempotency_key = request.headers["Idempotency-Key"]
     unless idempotency_key.present?
       return render json: {
         error: {
@@ -36,7 +36,7 @@ class Api::LoansController < ApplicationController
         error: {
           code: "validation_failed",
           message: "term_days must be 1..60",
-          details: ["term_days"]
+          details: [ "term_days" ]
         }
       }, status: :unprocessable_content
     end
@@ -77,29 +77,29 @@ class Api::LoansController < ApplicationController
           reason: nil
         }
 
-        if @loan.product == "micro" && 
-           current_user.kyc_approved? && 
+        if @loan.product == "micro" &&
+           current_user.kyc_approved? &&
            score >= Rails.configuration.x.scoring.short_term_min &&
            !current_user.has_overdue_loans?
-          
+
           # Auto-approve the loan
           begin
             loan_state = Loans::Services::LoanState.new
             loan_state.approve!(@loan, actor: current_user, correlation_id: request.request_id)
             decision[:approved] = true
-            decision[:reason] = 'auto_approved_micro_loan'
+            decision[:reason] = "auto_approved_micro_loan"
           rescue Loans::Services::LoanState::GuardFailedError, Loans::Services::LoanState::InvalidStateTransitionError => e
             # If approval fails, keep it pending with appropriate reason
-            decision[:reason] = 'auto_approval_failed'
+            decision[:reason] = "auto_approval_failed"
           end
         elsif !current_user.kyc_approved?
-          decision[:reason] = 'kyc_not_approved'
+          decision[:reason] = "kyc_not_approved"
         elsif current_user.has_overdue_loans?
-          decision[:reason] = 'user_has_overdue_loans'
+          decision[:reason] = "user_has_overdue_loans"
         elsif score < Rails.configuration.x.scoring.short_term_min
-          decision[:reason] = 'below_score_threshold'
+          decision[:reason] = "below_score_threshold"
         else
-          decision[:reason] = 'pending_manual_review'
+          decision[:reason] = "pending_manual_review"
         end
 
         # Store idempotency key
@@ -174,7 +174,7 @@ class Api::LoansController < ApplicationController
         user_score: current_score,
         score_threshold: Rails.configuration.x.scoring.short_term_min,
         approved: true,
-        reason: 'auto_approved_micro_loan'
+        reason: "auto_approved_micro_loan"
       }
     else
       # For pending loans, we can infer decision from state
@@ -183,7 +183,7 @@ class Api::LoansController < ApplicationController
         user_score: current_score,
         score_threshold: Rails.configuration.x.scoring.short_term_min,
         approved: false,
-        reason: 'pending_manual_review'
+        reason: "pending_manual_review"
       }
     end
 

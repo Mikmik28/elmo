@@ -28,7 +28,7 @@ RSpec.describe "Short-term loan application API", type: :request do
     it 'successfully creates short-term loan with auto-approval for qualified users' do
       # Mock the scoring threshold to ensure predictable auto-approval
       allow(Rails.configuration.x.scoring).to receive(:short_term_min).and_return(640)
-      
+
       # Valid short-term loan parameters
       params = {
         loan: {
@@ -40,7 +40,7 @@ RSpec.describe "Short-term loan application API", type: :request do
       post '/api/loans', params: params.to_json, headers: headers
 
       expect(response).to have_http_status(:created)
-      
+
       json = JSON.parse(response.body)
       loan = json['loan']
       decision = json['loan']['decision']
@@ -57,7 +57,7 @@ RSpec.describe "Short-term loan application API", type: :request do
       expect(decision['score_threshold']).to eq(640)
       expect(decision['approved']).to be true
       expect(decision['reason']).to eq('auto_approved_micro_loan')
-      
+
       # Verify loan was actually created
       created_loan = Loan.find(loan['id'])
       expect(created_loan.product).to eq('micro')
@@ -69,11 +69,11 @@ RSpec.describe "Short-term loan application API", type: :request do
   context 'pending_when_below_threshold' do
     it 'creates loan in pending state when score below threshold' do
       # Create a user with low score by having recent account creation
-      low_score_user = create(:user, :kyc_approved, 
+      low_score_user = create(:user, :kyc_approved,
                               current_score: 635,
                               created_at: 1.month.ago) # Recent account = lower score
       login_as(low_score_user, scope: :user)
-      
+
       params = {
         loan: {
           amount_cents: 250000,
@@ -84,7 +84,7 @@ RSpec.describe "Short-term loan application API", type: :request do
       post '/api/loans', params: params.to_json, headers: headers
 
       expect(response).to have_http_status(:created)
-      
+
       json = JSON.parse(response.body)
       loan = json['loan']
       decision = json['loan']['decision']
@@ -359,12 +359,12 @@ describe "Short-term loan application API - unauthenticated", type: :request do
   context 'unauthenticated_request' do
     it 'requires authentication' do
       # Create a test without logging in any user
-      post '/api/loans', 
-           params: { loan: { amount_cents: 200000, term_days: 15 } }.to_json, 
+      post '/api/loans',
+           params: { loan: { amount_cents: 200000, term_days: 15 } }.to_json,
            headers: { 'Content-Type' => 'application/json', 'Idempotency-Key' => 'test-key-456' }
 
       # Expect either 401 unauthorized or 302 redirect to login (both indicate authentication required)
-      expect([401, 302]).to include(response.status)
+      expect([ 401, 302 ]).to include(response.status)
     end
   end
 end
