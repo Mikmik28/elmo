@@ -16,6 +16,16 @@ class LoanPolicy < ApplicationPolicy
     user.present?
   end
 
+  def disburse?
+    # Users can disburse their own loans, or admin can disburse any loan
+    user.present? && (record.user_id == user.id || user.admin_role?)
+  end
+
+  def force_disburse?
+    # Only admin can force disburse
+    user.present? && user.admin_role?
+  end
+
   class Scope < ApplicationPolicy::Scope
     def resolve
       # Users can only see their own loans

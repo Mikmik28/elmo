@@ -32,20 +32,18 @@ module Loans
       end
 
       def disburse!(loan, gateway:, idem_key:, correlation_id: SecureRandom.uuid)
-        IdempotencyKey.lock_or_raise!(
-          key: idem_key,
-          scope: "loans/disburse",
-          resource: loan
-        )
-
         with_transaction_and_lock(loan) do
+          # Create or find idempotency key first
+          IdempotencyKey.lock_or_raise!(
+            key: idem_key,
+            scope: "loans/disburse",
+            resource: loan
+          )
+
           guard_can_disburse!(loan)
 
           # Gateway call to actually disburse funds
-          gateway_ref = gateway.disburse(
-            amount_cents: loan.amount_cents,
-            recipient: loan.user
-          )
+          gateway_ref = gateway.disburse(loan)
 
           # Update loan state
           loan.update!(state: "disbursed")

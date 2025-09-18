@@ -3,6 +3,14 @@
 class LoansController < ApplicationController
   before_action :authenticate_user!
 
+  def index
+    if current_user.admin_role?
+      @loans = Loan.includes(:user).order(created_at: :desc)
+    else
+      @loans = current_user.loans.order(created_at: :desc)
+    end
+  end
+
   def new
     @loan = current_user.loans.build
   end
@@ -18,7 +26,11 @@ class LoansController < ApplicationController
   end
 
   def show
-    @loan = current_user.loans.find(params[:id])
+    if current_user.admin_role?
+      @loan = Loan.find(params[:id])
+    else
+      @loan = current_user.loans.find(params[:id])
+    end
   end
 
   private

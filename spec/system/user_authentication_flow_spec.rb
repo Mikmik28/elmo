@@ -41,7 +41,7 @@ RSpec.describe 'User Authentication Flow', type: :system do
       # Should be signed in
       expect(page).to have_content('Signed in successfully')
       expect(page).to have_content('Hello, test@example.com!')
-      expect(page).to have_link('Sign Out')
+      expect(page).to have_button('Sign Out')
     end
   end
 

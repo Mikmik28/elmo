@@ -24,6 +24,12 @@ Rails.application.routes.draw do
         patch :reject
       end
     end
+
+    resources :loans, only: [] do
+      member do
+        post :force_disburse, to: "disbursements#create"
+      end
+    end
   end
 
   # KYC routes
@@ -36,11 +42,15 @@ Rails.application.routes.draw do
   post "scoring/recompute", to: "scoring/previews#create", as: :scoring_recompute
 
   # Loan routes
-  resources :loans, only: [ :show, :new, :create ]
+  resources :loans, only: [ :index, :show, :new, :create ]
 
   # API routes
   namespace :api do
-    resources :loans, only: [ :index, :show, :create ]
+    resources :loans, only: [ :index, :show, :create ] do
+      member do
+        post :disburse, to: "loans/disbursements#create"
+      end
+    end
   end
 
   # Letter Opener routes (development only)
