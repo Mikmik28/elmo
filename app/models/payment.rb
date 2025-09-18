@@ -49,11 +49,11 @@ class Payment < ApplicationRecord
 
   # Money methods
   def amount_in_pesos
-    amount_cents / 100.0
+    BigDecimal(amount_cents) / 100
   end
 
   def amount_in_pesos=(amount)
-    self.amount_cents = (amount.to_f * 100).to_i
+    self.amount_cents = (BigDecimal(amount.to_s) * 100).to_i
   end
 
   # State predicates

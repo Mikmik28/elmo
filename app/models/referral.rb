@@ -25,12 +25,17 @@
 #  fk_rails_...  (referrer_id => users.id)
 #
 class Referral < ApplicationRecord
+  include EnumAliases
+
   belongs_to :referrer, class_name: "User"
   belongs_to :referee, class_name: "User"
   belongs_to :promo_code, optional: true
 
   # Enums
   enum :status, { pending: "pending", rewarded: "rewarded" }, suffix: true
+
+  # Create unprefixed aliases for status predicates (e.g., pending?, rewarded?)
+  alias_unprefixed_enum_predicates :status
 
   # Validations
   validates :status, presence: true, inclusion: { in: statuses.keys }
