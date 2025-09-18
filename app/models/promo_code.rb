@@ -21,10 +21,15 @@
 #  index_promo_codes_on_ends_at             (ends_at)
 #
 class PromoCode < ApplicationRecord
+  include EnumAliases
+
   has_many :referrals, dependent: :nullify
 
   # Enums
   enum :kind, { referral: "referral", discount: "discount" }, suffix: true
+
+  # Create unprefixed aliases for kind predicates (e.g., referral?, discount?)
+  alias_unprefixed_enum_predicates :kind
 
   # Validations
   validates :code, presence: true, uniqueness: true, format: { with: /\A[A-Z0-9]+\z/, message: "must contain only uppercase letters and numbers" }
@@ -42,12 +47,12 @@ class PromoCode < ApplicationRecord
 
   # Money methods
   def value_in_pesos
-    return 0 unless value_cents
-    value_cents / 100.0
+    return BigDecimal(0) unless value_cents
+    BigDecimal(value_cents) / 100
   end
 
   def value_in_pesos=(amount)
-    self.value_cents = amount ? (amount.to_f * 100).to_i : nil
+    self.value_cents = amount ? (BigDecimal(amount.to_s) * 100).to_i : nil
   end
 
   # State predicates

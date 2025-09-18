@@ -169,11 +169,11 @@ class User < ApplicationRecord
   end
 
   def credit_limit_in_pesos
-    credit_limit_cents / 100.0
+    BigDecimal(credit_limit_cents) / 100
   end
 
   def credit_limit_in_pesos=(amount)
-    self.credit_limit_cents = (amount.to_f * 100).to_i
+    self.credit_limit_cents = (BigDecimal(amount.to_s) * 100).to_i
   end
 
   # KYC methods
