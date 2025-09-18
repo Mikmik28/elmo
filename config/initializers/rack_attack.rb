@@ -38,6 +38,13 @@ class Rack::Attack
     end
   end
 
+  # Allow 5 loan application attempts per IP per minute
+  throttle("loan_application_attempts_per_ip", limit: 5, period: 1.minute) do |req|
+    if req.path == "/api/loans" && req.post?
+      req.ip
+    end
+  end
+
   # General rate limiting: 100 requests per IP per minute
   throttle("general_requests_per_ip", limit: 100, period: 1.minute) do |req|
     req.ip unless req.path.start_with?("/assets")

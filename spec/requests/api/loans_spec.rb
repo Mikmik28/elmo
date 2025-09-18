@@ -4,7 +4,7 @@ require 'rails_helper'
 
 RSpec.describe 'API Loans', type: :request do
   let!(:user) { create(:user, :kyc_approved, otp_required_for_login: false) }
-  let(:headers) { { 'Content-Type' => 'application/json' } }
+  let(:headers) { { 'Content-Type' => 'application/json', 'Idempotency-Key' => SecureRandom.uuid } }
 
   before do
     # Use Warden's login_as for API authentication
@@ -23,33 +23,34 @@ RSpec.describe 'API Loans', type: :request do
       end
 
       it 'creates loan with computed micro product' do
-        post '/api/loans', params: loan_params
+        post '/api/loans', params: loan_params.to_json, headers: headers
 
         expect(response).to have_http_status(:created)
 
         json = JSON.parse(response.body)
-        expect(json['product']).to eq('micro')
-        expect(json['term_days']).to eq(45)
-        expect(json['amount_cents']).to eq(500000)
-        expect(json['state']).to eq('pending')
-        expect(json).to have_key('id')
-        expect(json).to have_key('due_on')
-        expect(json).to have_key('created_at')
-        expect(json).to have_key('updated_at')
+        loan = json['loan']
+        expect(loan['product']).to eq('micro')
+        expect(loan['term_days']).to eq(45)
+        expect(loan['amount_cents']).to eq(500000)
+        expect(loan['state']).to eq('pending')
+        expect(loan).to have_key('id')
+        expect(loan).to have_key('due_on')
+        expect(json).to have_key('loan')
       end
 
       it 'ignores client-provided product parameter' do
         loan_params[:loan][:product] = 'longterm' # Client tries to override
 
-        post '/api/loans', params: loan_params
+        post '/api/loans', params: loan_params.to_json, headers: headers
 
         expect(response).to have_http_status(:created)
         json = JSON.parse(response.body)
-        expect(json['product']).to eq('micro') # Should be computed from term_days
+        loan = json['loan']
+        expect(loan['product']).to eq('micro') # Should be computed from term_days
       end
     end
 
-    context 'with valid extended loan parameters' do
+    context 'with extended loan parameters (should fail - short-term API only)' do
       let(:loan_params) do
         {
           loan: {
@@ -59,18 +60,18 @@ RSpec.describe 'API Loans', type: :request do
         }
       end
 
-      it 'creates loan with computed extended product' do
-        post '/api/loans', params: loan_params
+      it 'rejects extended loan with validation error' do
+        post '/api/loans', params: loan_params.to_json, headers: headers
 
-        expect(response).to have_http_status(:created)
+        expect(response).to have_http_status(:unprocessable_content)
 
         json = JSON.parse(response.body)
-        expect(json['product']).to eq('extended')
-        expect(json['term_days']).to eq(150)
+        expect(json['error']['code']).to eq('validation_failed')
+        expect(json['error']['message']).to include('term_days')
       end
     end
 
-    context 'with valid longterm loan parameters' do
+    context 'with longterm loan parameters (should fail - short-term API only)' do
       let(:loan_params) do
         {
           loan: {
@@ -80,18 +81,18 @@ RSpec.describe 'API Loans', type: :request do
         }
       end
 
-      it 'creates loan with computed longterm product' do
-        post '/api/loans', params: loan_params
+      it 'rejects longterm loan with validation error' do
+        post '/api/loans', params: loan_params.to_json, headers: headers
 
-        expect(response).to have_http_status(:created)
+        expect(response).to have_http_status(:unprocessable_content)
 
         json = JSON.parse(response.body)
-        expect(json['product']).to eq('longterm')
-        expect(json['term_days']).to eq(270)
+        expect(json['error']['code']).to eq('validation_failed')
+        expect(json['error']['message']).to include('term_days')
       end
     end
 
-    context 'with another valid longterm term (365 days)' do
+    context 'with another longterm term (365 days) (should fail - short-term API only)' do
       let(:loan_params) do
         {
           loan: {
@@ -101,14 +102,14 @@ RSpec.describe 'API Loans', type: :request do
         }
       end
 
-      it 'creates loan with computed longterm product' do
-        post '/api/loans', params: loan_params
+      it 'rejects 365-day loan with validation error' do
+        post '/api/loans', params: loan_params.to_json, headers: headers
 
-        expect(response).to have_http_status(:created)
+        expect(response).to have_http_status(:unprocessable_content)
 
         json = JSON.parse(response.body)
-        expect(json['product']).to eq('longterm')
-        expect(json['term_days']).to eq(365)
+        expect(json['error']['code']).to eq('validation_failed')
+        expect(json['error']['message']).to include('term_days')
       end
     end
 
@@ -123,7 +124,7 @@ RSpec.describe 'API Loans', type: :request do
       end
 
       it 'returns 422 with error contract' do
-        post '/api/loans', params: loan_params
+        post '/api/loans', params: loan_params.to_json, headers: headers
 
         expect(response).to have_http_status(:unprocessable_content)
 
@@ -131,7 +132,7 @@ RSpec.describe 'API Loans', type: :request do
         expect(json).to have_key('error')
         expect(json['error']['code']).to eq('validation_failed')
         expect(json['error']['message']).to be_present
-        expect(json['error']['details']).to include('term_days')
+        expect(json['error']['message']).to include('term_days')
       end
     end
 
@@ -146,54 +147,77 @@ RSpec.describe 'API Loans', type: :request do
       end
 
       it 'returns 422 with validation error' do
-        post '/api/loans', params: loan_params
+        post '/api/loans', params: loan_params.to_json, headers: headers
 
         expect(response).to have_http_status(:unprocessable_content)
 
         json = JSON.parse(response.body)
         expect(json['error']['code']).to eq('validation_failed')
-        expect(json['error']['details']).to include('amount_cents')
+        expect(json['error']['message']).to include('Amount cents')
       end
     end
 
     context 'boundary value testing' do
-      [
-        { term_days: 60, expected_product: 'micro' },
-        { term_days: 61, expected_product: 'extended' },
-        { term_days: 180, expected_product: 'extended' }
-      ].each do |test_case|
-        it "correctly assigns #{test_case[:expected_product]} for #{test_case[:term_days]} days" do
-          # Use appropriate amount for each product
-          amount_cents = case test_case[:expected_product]
-          when 'micro' then 500000 # ₱5,000
-          when 'extended' then 1500000 # ₱15,000
-          when 'longterm' then 3000000 # ₱30,000
-          end
-
-          loan_params = {
-            loan: {
-              amount_cents: amount_cents,
-              term_days: test_case[:term_days]
-            }
+      # Valid short-term boundary (should pass)
+      it 'correctly assigns micro for 60 days' do
+        loan_params = {
+          loan: {
+            amount_cents: 500000, # ₱5,000
+            term_days: 60
           }
+        }
 
-          post '/api/loans', params: loan_params
+        post '/api/loans', params: loan_params.to_json, headers: headers
 
-          expect(response).to have_http_status(:created)
-          json = JSON.parse(response.body)
-          expect(json['product']).to eq(test_case[:expected_product])
-        end
+        expect(response).to have_http_status(:created)
+        json = JSON.parse(response.body)
+        loan = json['loan']
+        expect(loan['product']).to eq('micro')
+      end
+
+      # Invalid - outside short-term range (should fail)
+      it 'rejects 61 days as outside short-term range' do
+        loan_params = {
+          loan: {
+            amount_cents: 1500000, # ₱15,000
+            term_days: 61
+          }
+        }
+
+        post '/api/loans', params: loan_params.to_json, headers: headers
+
+        expect(response).to have_http_status(:unprocessable_content)
+        json = JSON.parse(response.body)
+        expect(json['error']['code']).to eq('validation_failed')
+        expect(json['error']['message']).to include('term_days')
+      end
+
+      # Invalid - way outside short-term range (should fail)
+      it 'rejects 180 days as outside short-term range' do
+        loan_params = {
+          loan: {
+            amount_cents: 1500000, # ₱15,000
+            term_days: 180
+          }
+        }
+
+        post '/api/loans', params: loan_params.to_json, headers: headers
+
+        expect(response).to have_http_status(:unprocessable_content)
+        json = JSON.parse(response.body)
+        expect(json['error']['code']).to eq('validation_failed')
+        expect(json['error']['message']).to include('term_days')
       end
     end
   end
 
   describe 'GET /api/loans' do
     let!(:loan1) { create(:loan, user: user, term_days: 30, product: nil) }
-    let!(:loan2) { create(:loan, user: user, term_days: 150, product: nil) }
+    let!(:loan2) { create(:loan, user: user, term_days: 45, product: nil) }
     let!(:other_user_loan) { create(:loan, term_days: 45) }
 
     it 'returns loans from the system (mocked auth)' do
-      get '/api/loans'
+      get '/api/loans', headers: headers
 
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
@@ -209,17 +233,17 @@ RSpec.describe 'API Loans', type: :request do
   end
 
   describe 'GET /api/loans/:id' do
-    let!(:loan) { create(:loan, user: user, term_days: 270, amount_cents: 3000000, product: nil) }
+    let!(:loan) { create(:loan, user: user, term_days: 45, amount_cents: 500000, product: nil) }
 
     it 'returns loan details' do
-      get "/api/loans/#{loan.id}"
+      get "/api/loans/#{loan.id}", headers: headers
 
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
 
       expect(json['id']).to eq(loan.id)
-      expect(json['product']).to eq('longterm')
-      expect(json['term_days']).to eq(270)
+      expect(json['product']).to eq('micro')
+      expect(json['term_days']).to eq(45)
     end
 
     # Skip this test for now since authentication is disabled

@@ -18,3 +18,6 @@ Rails.configuration.x.scoring.bounds = {
 # Feature flags
 Rails.configuration.x.scoring.preview_enabled = false    # Allow preview outside dev
 Rails.configuration.x.scoring.legacy_delta_mode = false  # Keep old CreditScoreEvent callback OFF by default
+
+# Auto-approval thresholds
+Rails.configuration.x.scoring.short_term_min = 640  # Minimum score for auto-approval of short-term loans
