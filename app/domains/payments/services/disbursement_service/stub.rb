@@ -7,7 +7,7 @@ module Payments
         def request!(loan, idem_key:, correlation_id: SecureRandom.uuid)
           # Guard: loan must be approved
           unless loan.state_approved?
-            raise Loans::Services::LoanState::InvalidStateTransitionError, 
+            raise Loans::Services::LoanState::InvalidStateTransitionError,
                   "Cannot disburse loan in state: #{loan.state}"
           end
 
@@ -27,9 +27,9 @@ module Payments
 
           # Call the loan state service to handle disbursement
           Loans::Services::LoanState.new.disburse!(
-            loan, 
-            gateway: self, 
-            idem_key: idem_key, 
+            loan,
+            gateway: self,
+            idem_key: idem_key,
             correlation_id: correlation_id
           )
         end

@@ -10,12 +10,12 @@ class Admin::DisbursementsController < ApplicationController
       if @loan.state_approved?
         # Generate unique idempotency key for admin override
         idem_key = "admin-override-#{SecureRandom.uuid}"
-        
+
         # Use the same disbursement service
         disbursement_service = Payments::Services::DisbursementService::Stub.new
         disbursement_service.request!(
-          @loan, 
-          idem_key: idem_key, 
+          @loan,
+          idem_key: idem_key,
           correlation_id: request.request_id
         )
 
@@ -23,8 +23,8 @@ class Admin::DisbursementsController < ApplicationController
         AuditLogger.log(
           "force_disburse_loan",
           current_user,
-          { 
-            loan_id: @loan.id, 
+          {
+            loan_id: @loan.id,
             previous_state: "approved",
             new_state: "disbursed",
             idempotency_key: idem_key,
@@ -34,10 +34,10 @@ class Admin::DisbursementsController < ApplicationController
         )
 
         redirect_to admin_loan_path(@loan), notice: "Loan successfully disbursed."
-        
+
       elsif @loan.state_disbursed?
         redirect_to admin_loan_path(@loan), notice: "Loan is already disbursed."
-        
+
       else
         redirect_to admin_loan_path(@loan), alert: "Cannot disburse loan in state: #{@loan.state}"
       end

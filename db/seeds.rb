@@ -59,7 +59,7 @@ if Rails.env.development?
       term_days: 15,
       state: "disbursed"
     )
-    
+
     # Add payment for the disbursed loan
     disbursed_loan.payments.create!(
       amount_cents: 3_000_00,

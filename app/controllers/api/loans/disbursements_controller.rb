@@ -11,7 +11,7 @@ class Api::Loans::DisbursementsController < ApplicationController
   def create
     # Find existing idempotency key
     idem_key = IdempotencyKey.find_by(key: @idempotency_key, scope: "loans/disburse")
-    
+
     if idem_key
       # Return previous result
       render json: disbursement_response(@loan), status: :created
@@ -27,8 +27,8 @@ class Api::Loans::DisbursementsController < ApplicationController
     # Create disbursement service and request disbursement
     disbursement_service = Payments::Services::DisbursementService::Stub.new
     disbursement_service.request!(
-      @loan, 
-      idem_key: @idempotency_key, 
+      @loan,
+      idem_key: @idempotency_key,
       correlation_id: request.request_id
     )
 
@@ -67,7 +67,7 @@ class Api::Loans::DisbursementsController < ApplicationController
 
   def require_idempotency_key
     @idempotency_key = request.headers["Idempotency-Key"]
-    
+
     if @idempotency_key.blank?
       render json: { error: "Idempotency-Key header is required" }, status: :unprocessable_entity
     end
@@ -76,10 +76,10 @@ class Api::Loans::DisbursementsController < ApplicationController
   def disbursement_response(loan)
     # Reload loan to get fresh state
     loan.reload
-    
+
     # Get the most recent payment (should be the disbursement payment)
     payment = loan.payments.order(:created_at).last
-    
+
     # Get recent outbox events for this loan
     events = OutboxEvent.where(aggregate_id: loan.id, aggregate_type: "Loan")
                        .where("name LIKE ? OR name = ?", "loan.disbursement%", "loan.disbursed.v1")
