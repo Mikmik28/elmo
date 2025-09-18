@@ -122,4 +122,49 @@ RSpec.describe "Scoring::Previews", type: :request do
       end
     end
   end
+
+  describe "preview_guarded_auth_required" do
+    it "requires authentication for preview access" do
+      get "/scoring/preview"
+      expect(response).to redirect_to(new_user_session_path)
+    end
+
+    it "requires authentication for recompute action" do
+      post "/scoring/recompute"
+      expect(response).to redirect_to(new_user_session_path)
+    end
+
+    context "when preview configuration is disabled" do
+      around do |example|
+        original_preview = Rails.configuration.x.scoring.preview_enabled
+
+        # Disable preview
+        Rails.configuration.x.scoring.preview_enabled = false
+
+        begin
+          example.run
+        ensure
+          Rails.configuration.x.scoring.preview_enabled = original_preview
+        end
+      end
+
+      it "properly enforces environment-based access control" do
+        # In test environment:
+        # Rails.env.development? = false
+        # Rails.configuration.x.scoring.preview_enabled = false (set above)
+        # So guard should block access (false || false = false)
+
+        post user_session_path, params: {
+          user: {
+            email: user.email,
+            password: user.password
+          }
+        }
+
+        # The guard blocks access and Rails converts the RoutingError to 404
+        get "/scoring/preview"
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+  end
 end
