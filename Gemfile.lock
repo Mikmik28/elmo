@@ -141,6 +141,8 @@ GEM
     factory_bot_rails (6.5.1)
       factory_bot (~> 6.5)
       railties (>= 6.1.0)
+    faker (3.5.2)
+      i18n (>= 1.8.11, < 2)
     fugit (1.11.2)
       et-orbi (~> 1, >= 1.2.11)
       raabro (~> 1.4)
@@ -397,6 +399,9 @@ GEM
     thruster (0.1.15-aarch64-linux)
     thruster (0.1.15-x86_64-linux)
     timeout (0.4.3)
+    turbo-rails (2.0.16)
+      actionpack (>= 7.1.0)
+      railties (>= 7.1.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     unicode-display_width (3.1.5)
@@ -442,6 +447,7 @@ DEPENDENCIES
   devise
   devise-two-factor
   factory_bot_rails
+  faker
   jbuilder
   jsbundling-rails
   kamal
@@ -464,6 +470,7 @@ DEPENDENCIES
   solid_cache
   solid_queue
   thruster
+  turbo-rails
   tzinfo-data
   web-console
 

@@ -14,6 +14,8 @@ gem "puma", ">= 5.0"
 gem "jsbundling-rails"
 # Bundle and process CSS [https://github.com/rails/cssbundling-rails]
 gem "cssbundling-rails"
+# Hotwire Turbo for reactive frontend [https://github.com/hotwired/turbo-rails]
+gem "turbo-rails"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
 
@@ -105,4 +107,7 @@ group :test do
 
   # Shoulda matchers for cleaner model and controller tests
   gem "shoulda-matchers"
+
+  # A library for generating fake data [https://github.com/faker-ruby/faker]
+  gem "faker"
 end
