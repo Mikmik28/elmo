@@ -1,0 +1,146 @@
+<% content_for :title, "My Loans" %>
+
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+  <div class="sm:flex sm:items-center">
+      <div class="sm:flex-auto">
+    <h1 class="text-3xl font-bold text-gray-900">
+      <% if current_user.admin_role? %>
+        All Loans (Admin View)
+      <% else %>
+        My Loans
+      <% end %>
+    </h1>
+    <p class="mt-2 text-sm text-gray-700">
+      <% if current_user.admin_role? %>
+        Admin view showing all loan applications across all users.
+      <% else %>
+        A list of all your loan applications and their current status.
+      <% end %>
+    </p>
+  </div>
+    <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+      <%= link_to "Apply for New Loan", new_loan_path, class: "inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto" %>
+    </div>
+  </div>
+
+  <% if @loans.any? %>
+    <div class="mt-8 flex flex-col">
+      <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
+        <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
+          <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+            <table class="min-w-full divide-y divide-gray-300">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Loan ID
+                  </th>
+                  <% if current_user.admin_role? %>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Borrower
+                    </th>
+                  <% end %>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Amount
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Term
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Product
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Due Date
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Applied
+                  </th>
+                  <th scope="col" class="relative px-6 py-3">
+                    <span class="sr-only">Actions</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <% @loans.each do |loan| %>
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                      <%= loan.id.first(8) %>...
+                    </td>
+                    <% if current_user.admin_role? %>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <%= loan.user.full_name %><br>
+                        <span class="text-xs text-gray-500"><%= loan.user.email %></span>
+                      </td>
+                    <% end %>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      ₱<%= number_with_delimiter(loan.amount_in_pesos, precision: 2) %>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <%= loan.term_days %> days
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                        <%= case loan.product
+                            when 'micro' then 'bg-blue-100 text-blue-800'
+                            when 'extended' then 'bg-yellow-100 text-yellow-800' 
+                            when 'longterm' then 'bg-green-100 text-green-800'
+                            else 'bg-gray-100 text-gray-800'
+                            end %>">
+                        <%= loan.product.capitalize %>
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                        <%= case loan.state
+                            when 'pending' then 'bg-yellow-100 text-yellow-800'
+                            when 'approved' then 'bg-green-100 text-green-800'
+                            when 'disbursed' then 'bg-blue-100 text-blue-800'
+                            when 'paid' then 'bg-green-100 text-green-800'
+                            when 'overdue' then 'bg-red-100 text-red-800'
+                            when 'defaulted' then 'bg-red-100 text-red-800'
+                            when 'rejected' then 'bg-gray-100 text-gray-800'
+                            else 'bg-gray-100 text-gray-800'
+                            end %>">
+                        <%= loan.state.capitalize %>
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <% if loan.due_on %>
+                        <%= loan.due_on.strftime("%b %d, %Y") %>
+                      <% else %>
+                        <span class="text-gray-400">N/A</span>
+                      <% end %>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <%= time_ago_in_words(loan.created_at) %> ago
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <%= link_to "View", loan_path(loan), class: "text-indigo-600 hover:text-indigo-900" %>
+                      <% if loan.state_approved? %>
+                        <span class="mx-2 text-gray-300">|</span>
+                        <span class="text-green-600 font-medium">Ready to Disburse</span>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% else %>
+    <div class="text-center mt-12">
+      <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      <h3 class="mt-2 text-sm font-medium text-gray-900">No loans</h3>
+      <p class="mt-1 text-sm text-gray-500">Get started by applying for your first loan.</p>
+      <div class="mt-6">
+        <%= link_to "Apply for New Loan", new_loan_path, class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
+      </div>
+    </div>
+  <% end %>
+</div>

@@ -206,10 +206,7 @@ RSpec.describe Loans::Services::LoanState, type: :service do
       end
 
       it 'calls gateway to disburse funds' do
-        expect(gateway).to receive(:disburse).with(
-          amount_cents: loan.amount_cents,
-          recipient: loan.user
-        ).and_return(gateway_ref)
+        expect(gateway).to receive(:disburse).with(loan).and_return(gateway_ref)
 
         service.disburse!(loan, gateway: gateway, idem_key: idem_key, correlation_id: correlation_id)
       end
