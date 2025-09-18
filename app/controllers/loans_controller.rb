@@ -11,9 +11,9 @@ class LoansController < ApplicationController
     @loan = current_user.loans.build(loan_params)
 
     if @loan.save
-      redirect_to loan_path(@loan), notice: "Loan created successfully!"
+      redirect_to @loan, notice: 'Loan was successfully created.'
     else
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
