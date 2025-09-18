@@ -67,7 +67,7 @@ RSpec.describe "Admin::KycReviews", type: :request do
 
         # Check that outbox event was created
         event = OutboxEvent.last
-        expect(event.name).to eq("kyc.approved.v1")
+        expect(event.name).to eq("user.kyc_approved.v1")
         expect(event.payload["approved_by"]).to eq(admin_user.id)
       end
     end

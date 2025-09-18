@@ -105,7 +105,7 @@ module Kyc
       if decision == "approved"
         # Publish outbox event for approved KYC
         OutboxEvent.publish!(
-          name: "kyc.approved.v1",
+          name: "user.kyc_approved.v1",
           aggregate: @user,
           payload: {
             user_id: @user.id,
