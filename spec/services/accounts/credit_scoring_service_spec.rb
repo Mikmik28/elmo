@@ -201,4 +201,101 @@ RSpec.describe Accounts::Services::CreditScoringService, type: :service do
       expect(scores.uniq.size).to eq(1), "All parallel calls should return same score"
     end
   end
+
+  describe "clamp_bounds_300_950" do
+    it "always returns scores within 300-950 range" do
+      # Test with extreme user data to verify clamping
+      extreme_user = create(:user, :kyc_pending, credit_limit_cents: 1_00, created_at: 1.day.ago)
+
+      # Create very bad loan history
+      loan = create(:loan, :defaulted, user: extreme_user, principal_outstanding_cents: 200_00)
+
+      service = described_class.new(extreme_user)
+      score = service.compute!
+
+      expect(score).to be_between(300, 950)
+      expect(score).to be >= 300
+      expect(score).to be <= 950
+    end
+  end
+
+  describe "high_on_time_low_utilization_increases" do
+    it "rewards users with good payment history and low utilization" do
+      good_user = create(:user, :kyc_approved, credit_limit_cents: 10000_00, created_at: 2.years.ago)
+
+      # Create excellent payment history (3 on-time payments)
+      3.times do |i|
+        loan = create(:loan, :disbursed, user: good_user, due_on: (6 + i).months.ago, created_at: (7 + i).months.ago)
+        create(:payment, :cleared, loan: loan, created_at: (6 + i).months.ago - 1.day)
+        loan.update!(state: "paid", principal_outstanding_cents: 0)
+      end
+
+      # Keep utilization low (no outstanding loans)
+      baseline_user = create(:user, :kyc_approved, credit_limit_cents: 10000_00, created_at: 2.years.ago)
+
+      good_score = described_class.new(good_user).compute!
+      baseline_score = described_class.new(baseline_user).compute!
+
+      expect(good_score).to be > baseline_score
+    end
+  end
+
+  describe "recent_overdue_penalizes" do
+    it "penalizes users with recent overdue loans" do
+      overdue_user = create(:user, :kyc_approved, credit_limit_cents: 10000_00, created_at: 2.years.ago)
+      clean_user = create(:user, :kyc_approved, credit_limit_cents: 10000_00, created_at: 2.years.ago)
+
+      # Create recent overdue loan (within 90 days)
+      create(:loan, :overdue, user: overdue_user, updated_at: 30.days.ago)
+
+      overdue_score = described_class.new(overdue_user).compute!
+      clean_score = described_class.new(clean_user).compute!
+
+      expect(overdue_score).to be < clean_score
+      # Behavior component should be -100 for recent overdue
+      overdue_breakdown = described_class.new(overdue_user).breakdown
+      expect(overdue_breakdown[:behavior][:normalized].to_f).to eq(-100.0)
+    end
+  end
+
+  describe "persist_and_audit_delta" do
+    it "persists score changes and creates audit events with delta" do
+      user.update!(current_score: 500)
+      service = described_class.new(user)
+
+      expect {
+        new_score = service.compute!(persist: true)
+        user.reload
+      }.to change { user.current_score }.from(500)
+      .and change { user.credit_score_events.count }.by(1)
+
+      event = user.credit_score_events.last
+      expect(event.reason).to eq("recompute")
+      expect(event.delta).not_to eq(0)
+      expect(event.delta).to eq(user.current_score - 500)
+      expect(event.meta).to include("scoring_components")
+    end
+  end
+
+  describe "event_on_change_only" do
+    it "emits events only when score actually changes" do
+      user.update!(current_score: 500)
+      service = described_class.new(user)
+
+      # First call should emit event (score will change from 500)
+      expect {
+        new_score = service.compute!(emit_event: true)
+        user.update!(current_score: new_score)
+      }.to change { OutboxEvent.count }.by(1)
+
+      # Second call with same conditions should not emit event
+      expect {
+        service.compute!(emit_event: true)
+      }.not_to change { OutboxEvent.count }
+
+      event = OutboxEvent.last
+      expect(event.name).to eq("user.score_changed.v1")
+      expect(event.payload).to include("user_id", "old_score", "new_score")
+    end
+  end
 end
