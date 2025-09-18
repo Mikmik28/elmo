@@ -31,33 +31,43 @@ This document outlines the core assumptions and conventions for the eLMo (Loan M
 
 ### Money Storage & Precision
 
-- **Data Type**: `integer` for monetary values (stored in cents)
+- **Storage Format**: `integer` for monetary values (stored in cents)
 - **Currency**: Primarily Philippine Peso (PHP)
-- **Storage**: Monetary values stored in cents (integer)
-- **Precision**: Calculations should use 4 decimal places for accuracy (use `BigDecimal` for all financial calculations)
+- **Precision**: Store amounts as **integer cents**; use **BigDecimal** for mathematical operations
+- **Calculation Standard**: All financial calculations use BigDecimal with 4 decimal places minimum for accuracy
+- **Interest & Ratios**: Store interest rates and ratios as decimals (e.g., 0.15 for 15%)
+- **Rounding**: Apply banker's rounding (half-even) consistently across all monetary calculations
 
 ### Rounding & Calculations
 
-- **Rounding Method**: Banker's rounding (round half to even)
+- **Rounding Method**: Banker's rounding (half-even) for all financial calculations
+- **Interest & Ratios**: Store and calculate interest rates and ratios as decimals (not percentages)
 - **Interest Calculation**: Per product-specific rules (see loan product documentation)
 - **Pro-rating**: Based on actual term_days for accurate daily calculations
-- **Implementation**: Use `BigDecimal` for all financial calculations
-- **Credit Scoring**: Canonical range 300-950 (aligned with TransUnion Philippines CreditVision)
+- **Implementation**: Use `BigDecimal` for all financial calculations to ensure precision
+- **Credit Scoring**:
+  - **Canonical internal range**: 300–950 (TransUnion Philippines aligned)
+  - **Partner/vendor scores**: Normalized to canonical range on data ingest
+  - **Score Updates**: Real-time normalization from external bureau responses
 
 ## API Design & Reliability
 
 ### Idempotency
 
 - **Requirement**: All mutable endpoints MUST require an "Idempotency-Key" header
-- **Key Format**: UUID v4 recommended
-- **Deduplication**: Webhooks deduplicated by provider event ID
-- **Storage**: Use `idempotency_keys` table for tracking
+- **Key Format**: UUID v4 recommended for uniqueness
+- **Deduplication**: Webhooks deduplicated by provider event ID (provider-specific)
+- **Storage**: Use `idempotency_keys` table for comprehensive tracking
+- **Timeout**: Idempotency keys expire after 24 hours
+- **Conflict Resolution**: Return same response for duplicate requests within timeout window
 
 ### Rate Limiting
 
-- **Login Endpoints**: Rate limited per IP address and email
-- **Webhook Ingestion**: Rate limited per provider specification
-- **Implementation**: Use Rack::Attack for rate limiting
+- **Login Endpoints**: Rate limited per IP address and email address
+- **Webhook Ingestion**: Rate limited per provider specification (varies by vendor)
+- **API Endpoints**: Standard rate limits applied to prevent abuse
+- **Implementation**: Use Rack::Attack for comprehensive rate limiting strategy
+- **Monitoring**: Track rate limit violations for security analysis
 
 ## Event-Driven Architecture
 
@@ -109,10 +119,10 @@ end
 
 ### Environments
 
-- **Development**: Local development with hot reloading
-- **Test**: Automated testing with parallel execution
-- **Staging**: Production-like environment for pre-deployment testing
-- **Production**: Live environment with full monitoring and logging
+- **Development (`dev`)**: Local development with hot reloading and detailed logging
+- **Test (`test`)**: Automated testing with parallel execution and isolated data
+- **Staging (`staging`)**: Production-like environment for pre-deployment validation
+- **Production (`prod`)**: Live environment with full monitoring, logging, and security
 
 ### Configuration Management
 
@@ -222,4 +232,5 @@ end
 
 ## Version History
 
+- **v2.0** (2025-09-19): Enhanced specifications for banker's rounding, TransUnion PH credit score alignment, detailed money handling, improved idempotency and rate limiting specificity
 - **v1.0** (2025-09-02): Initial assumptions and conventions document
