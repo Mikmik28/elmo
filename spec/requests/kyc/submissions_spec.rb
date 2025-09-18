@@ -79,6 +79,23 @@ RSpec.describe "Kyc::Submissions", type: :request do
         expect(user.kyc_payload).not_to include("gov_id_number")
       end
 
+      it "payload_masks_gov_id_last4" do
+        login_as(user, scope: :user)
+        full_gov_id = "123456789012345"
+
+        kyc_params_with_full_id = valid_attributes.deep_dup
+        kyc_params_with_full_id[:kyc][:gov_id_number] = full_gov_id
+
+        post kyc_path, params: kyc_params_with_full_id
+
+        user.reload
+        # Should only store last 4 digits in payload
+        expect(user.kyc_payload["gov_id_number_last4"]).to eq("2345")
+        # Full ID should not be stored
+        expect(user.kyc_payload).not_to include("gov_id_number")
+        expect(user.kyc_payload.values.join).not_to include(full_gov_id)
+      end
+
       it "updates user full name" do
         login_as(user, scope: :user)
         expect {
@@ -161,7 +178,7 @@ RSpec.describe "Kyc::Submissions", type: :request do
 
         # Check that outbox event was created
         event = OutboxEvent.last
-        expect(event.name).to eq("kyc.approved.v1")
+        expect(event.name).to eq("user.kyc_approved.v1")
         expect(event.aggregate_id).to eq(user.id)
         expect(event.payload["user_id"]).to eq(user.id)
       end

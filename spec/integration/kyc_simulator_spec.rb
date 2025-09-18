@@ -21,7 +21,7 @@ RSpec.describe "KYC Simulator Integration", type: :request do
         }.to change { OutboxEvent.count }.by(1)
 
         event = OutboxEvent.last
-        expect(event.name).to eq("kyc.approved.v1")
+        expect(event.name).to eq("user.kyc_approved.v1")
         expect(event.aggregate_type).to eq("User")
         expect(event.aggregate_id).to eq(user.id)
         expect(event.payload).to include(
