@@ -167,7 +167,7 @@ RSpec.describe "Disbursement Stub API", type: :request do
 
         post "/api/loans/#{approved_loan.id}/disburse"
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         json_response = JSON.parse(response.body)
         expect(json_response["error"]).to include("Idempotency-Key header is required")
       end
@@ -179,7 +179,7 @@ RSpec.describe "Disbursement Stub API", type: :request do
         post "/api/loans/#{pending_loan.id}/disburse",
              headers: { "Idempotency-Key" => "pending-key" }
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         json_response = JSON.parse(response.body)
         expect(json_response["error"]).to include("must be approved")
       end

@@ -20,7 +20,7 @@ class Api::Loans::DisbursementsController < ApplicationController
 
     # Verify loan is in approved state
     unless @loan.state_approved?
-      render json: { error: "Loan must be approved to disburse" }, status: :unprocessable_entity
+      render json: { error: "Loan must be approved to disburse" }, status: :unprocessable_content
       return
     end
 
@@ -35,7 +35,7 @@ class Api::Loans::DisbursementsController < ApplicationController
     render json: disbursement_response(@loan), status: :created
 
   rescue Loans::Services::LoanState::InvalidStateTransitionError => e
-    render json: { error: e.message }, status: :unprocessable_entity
+    render json: { error: e.message }, status: :unprocessable_content
   rescue => e
     render json: { error: "Internal server error" }, status: :internal_server_error
   end
@@ -69,7 +69,7 @@ class Api::Loans::DisbursementsController < ApplicationController
     @idempotency_key = request.headers["Idempotency-Key"]
 
     if @idempotency_key.blank?
-      render json: { error: "Idempotency-Key header is required" }, status: :unprocessable_entity
+      render json: { error: "Idempotency-Key header is required" }, status: :unprocessable_content
     end
   end
 

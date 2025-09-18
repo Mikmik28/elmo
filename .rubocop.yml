@@ -6,3 +6,19 @@ inherit_gem: { rubocop-rails-omakase: rubocop.yml }
 # # Use `[a, [b, c]]` not `[ a, [ b, c ] ]`
 # Layout/SpaceInsideArrayLiteralBrackets:
 #   Enabled: false
+
+# Prevent deprecated status code usage
+Lint/DeprecatedConstants:
+  Enabled: true
+
+# Custom rule to prevent deprecated HTTP status codes
+Style/HashSyntax:
+  Enabled: true
+
+# Add specific rule to catch deprecated status codes
+Naming/InclusiveLanguage:
+  Enabled: true
+  FlaggedTerms:
+    unprocessable_entity:
+      Suggestions:
+        - unprocessable_content
