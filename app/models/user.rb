@@ -9,6 +9,8 @@
 #  consumed_timestep         :integer
 #  credit_limit_cents        :integer          default(0), not null
 #  current_score             :integer          default(600), not null
+#  current_sign_in_at        :datetime
+#  current_sign_in_ip        :string
 #  date_of_birth             :date
 #  email                     :string           default(""), not null
 #  encrypted_otp_secret      :string
@@ -19,6 +21,8 @@
 #  full_name                 :string
 #  kyc_payload               :jsonb
 #  kyc_status                :string           default("pending"), not null
+#  last_sign_in_at           :datetime
+#  last_sign_in_ip           :string
 #  last_sign_in_with_otp     :datetime
 #  locked_at                 :datetime
 #  otp_backup_codes          :text
@@ -29,6 +33,7 @@
 #  reset_password_sent_at    :datetime
 #  reset_password_token      :string
 #  role                      :string           default("user"), not null
+#  sign_in_count             :integer          default(0), not null
 #  unconfirmed_email         :string
 #  unlock_token              :string
 #  created_at                :datetime         not null
@@ -38,22 +43,25 @@
 #
 #  index_users_on_confirmation_token      (confirmation_token) UNIQUE
 #  index_users_on_credit_limit_cents      (credit_limit_cents)
+#  index_users_on_current_sign_in_at      (current_sign_in_at)
 #  index_users_on_email                   (email) UNIQUE
 #  index_users_on_kyc_status              (kyc_status)
+#  index_users_on_last_sign_in_at         (last_sign_in_at)
 #  index_users_on_otp_required_for_login  (otp_required_for_login)
 #  index_users_on_phone                   (phone) UNIQUE
 #  index_users_on_referral_code           (referral_code) UNIQUE
 #  index_users_on_reset_password_token    (reset_password_token) UNIQUE
 #  index_users_on_role                    (role)
+#  index_users_on_sign_in_count           (sign_in_count)
 #  index_users_on_unlock_token            (unlock_token) UNIQUE
 #
 class User < ApplicationRecord
   include EnumAliases
 
   # Include default devise modules. Others available are:
-  # :trackable and :omniauthable
+  # :omniauthable
   devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :confirmable, :lockable,
+         :recoverable, :rememberable, :confirmable, :lockable, :trackable,
          :two_factor_authenticatable,
          otp_secret_encryption_key: Rails.application.credentials.dig(:otp_secret_encryption_key)
 

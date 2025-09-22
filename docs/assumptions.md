@@ -144,7 +144,10 @@ end
 - **Framework**: RSpec (rspec-rails) with FactoryBot & Faker; parallel enabled
 - **Parallel**: Enable parallel test execution for faster feedback
 - **Coverage**: Focus on business logic and critical paths
-- **System Tests**: Use Capybara for integration testing
+- **System Tests**: Use Capybara with Selenium WebDriver for comprehensive integration testing
+- **JavaScript Testing**: Selenium headless Chrome for testing Hotwire/Turbo interactions
+- **Progressive Enhancement**: Test both JavaScript-enabled and disabled scenarios
+- **Accessibility**: Include accessibility testing with proper focus management and ARIA validation
 
 ### Asset Pipeline
 

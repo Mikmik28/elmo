@@ -541,6 +541,30 @@ S3/Active Storage: set ENV; run `rails active_storage:install`.
 
 ## 11) RSpec Strategy & Skeletons
 
+### Testing Philosophy
+
+- **System Tests**: Use Capybara with Selenium WebDriver for comprehensive UI/UX testing
+- **JavaScript Testing**: Selenium headless Chrome for Hotwire/Turbo interactions and loading states
+- **Progressive Enhancement**: Test both JavaScript-enabled and disabled scenarios
+- **Accessibility**: Include ARIA validation, focus management, and keyboard navigation testing
+- **Authentication Flows**: Comprehensive testing of Devise authentication with enhanced UI features
+
+### System Test Configuration
+
+```ruby
+# spec/rails_helper.rb (excerpt)
+RSpec.configure do |config|
+  config.before(:each, type: :system) do
+    driven_by :selenium_headless_chrome
+  end
+
+  # For debugging, use visible browser
+  config.before(:each, type: :system, js: true, debug: true) do
+    driven_by :selenium_chrome
+  end
+end
+```
+
 ### Factories (excerpt)
 
 ```ruby

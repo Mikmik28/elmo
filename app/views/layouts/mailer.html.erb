@@ -1,13 +1,190 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <style>
-      /* Email styles need to be inline */
-    </style>
-  </head>
-
-  <body>
-    <%= yield %>
-  </body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <title><%= @email_title || "eLMo - Your Financial Partner" %></title>
+  <style type="text/css">
+    /* Base styles */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background-color: #f7fafc;
+      color: #2d3748;
+      -webkit-text-size-adjust: none;
+    }
+    
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+    }
+    
+    .email-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 40px 20px;
+      text-align: center;
+    }
+    
+    .email-header h1 {
+      margin: 0;
+      color: #ffffff;
+      font-size: 32px;
+      font-weight: bold;
+      letter-spacing: -0.5px;
+    }
+    
+    .email-header p {
+      margin: 8px 0 0 0;
+      color: #e2e8f0;
+      font-size: 16px;
+    }
+    
+    .email-content {
+      padding: 40px 30px;
+    }
+    
+    .email-content h2 {
+      margin: 0 0 20px 0;
+      color: #2d3748;
+      font-size: 24px;
+      font-weight: 600;
+    }
+    
+    .email-content p {
+      margin: 0 0 16px 0;
+      line-height: 1.6;
+      color: #4a5568;
+      font-size: 16px;
+    }
+    
+    .cta-button {
+      display: inline-block;
+      padding: 14px 28px;
+      margin: 20px 0;
+      background-color: #667eea;
+      color: #ffffff !important;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 16px;
+      text-align: center;
+      transition: background-color 0.3s ease;
+    }
+    
+    .cta-button:hover {
+      background-color: #5a67d8;
+    }
+    
+    .alert-box {
+      background-color: #fed7d7;
+      border: 1px solid #feb2b2;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 20px 0;
+    }
+    
+    .alert-box p {
+      margin: 0;
+      color: #9b2c2c;
+      font-size: 14px;
+    }
+    
+    .info-box {
+      background-color: #bee3f8;
+      border: 1px solid #90cdf4;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 20px 0;
+    }
+    
+    .info-box p {
+      margin: 0;
+      color: #2c5282;
+      font-size: 14px;
+    }
+    
+    .email-footer {
+      background-color: #edf2f7;
+      padding: 30px 20px;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+    }
+    
+    .email-footer p {
+      margin: 0 0 8px 0;
+      color: #718096;
+      font-size: 14px;
+    }
+    
+    .email-footer a {
+      color: #667eea;
+      text-decoration: none;
+    }
+    
+    .timestamp {
+      font-size: 12px;
+      color: #a0aec0;
+      margin-top: 20px;
+    }
+    
+    /* Mobile responsive */
+    @media only screen and (max-width: 600px) {
+      .email-container {
+        width: 100% !important;
+      }
+      
+      .email-header {
+        padding: 30px 20px;
+      }
+      
+      .email-header h1 {
+        font-size: 28px;
+      }
+      
+      .email-content {
+        padding: 30px 20px;
+      }
+      
+      .cta-button {
+        width: 100%;
+        box-sizing: border-box;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <!-- Header -->
+    <div class="email-header">
+      <h1>eLMo</h1>
+      <p>Your Trusted Financial Partner</p>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="email-content">
+      <%= yield %>
+      
+      <!-- Timestamp -->
+      <div class="timestamp">
+        <p>Sent on <%= Time.current.in_time_zone("Asia/Manila").strftime("%B %d, %Y at %l:%M %p PHT") %></p>
+      </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="email-footer">
+      <p><strong>eLMo</strong> - Empowering your financial journey</p>
+      <p>This email was sent to <%= @resource&.email || @email %>. If you have any questions, please contact our support team.</p>
+      <p>
+        <a href="#">Privacy Policy</a> | 
+        <a href="#">Terms of Service</a> | 
+        <a href="#">Contact Support</a>
+      </p>
+      <p style="margin-top: 16px; font-size: 12px;">
+        © <%= Date.current.year %> eLMo. All rights reserved.
+      </p>
+    </div>
+  </div>
+</body>
 </html>

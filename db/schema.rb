@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_17_181705) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_19_215132) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -212,15 +212,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_17_181705) do
     t.string "kyc_status", default: "pending", null: false
     t.jsonb "kyc_payload"
     t.date "date_of_birth"
+    t.integer "sign_in_count", default: 0, null: false
+    t.datetime "current_sign_in_at"
+    t.datetime "last_sign_in_at"
+    t.string "current_sign_in_ip"
+    t.string "last_sign_in_ip"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["credit_limit_cents"], name: "index_users_on_credit_limit_cents"
+    t.index ["current_sign_in_at"], name: "index_users_on_current_sign_in_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["kyc_status"], name: "index_users_on_kyc_status"
+    t.index ["last_sign_in_at"], name: "index_users_on_last_sign_in_at"
     t.index ["otp_required_for_login"], name: "index_users_on_otp_required_for_login"
     t.index ["phone"], name: "index_users_on_phone", unique: true
     t.index ["referral_code"], name: "index_users_on_referral_code", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["role"], name: "index_users_on_role"
+    t.index ["sign_in_count"], name: "index_users_on_sign_in_count"
     t.index ["unlock_token"], name: "index_users_on_unlock_token", unique: true
   end
 

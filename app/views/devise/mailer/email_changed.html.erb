@@ -1,7 +1,30 @@
-<p>Hello <%= @email %>!</p>
+<% @email_title = "eLMo email address changed" %>
+
+<h2>Email Address Updated</h2>
+
+<p>Hello <%= @resource.full_name || @email.split('@').first %>!</p>
+
+<p>This is to notify you that the email address associated with your eLMo account has been updated.</p>
 
 <% if @resource.try(:unconfirmed_email?) %>
-  <p>We're contacting you to notify you that your email is being changed to <%= @resource.unconfirmed_email %>.</p>
+  <div class="info-box">
+    <p><strong>Email change in progress:</strong> Your email address is being changed to <strong><%= @resource.unconfirmed_email %></strong>. You'll need to confirm the new email address to complete this change.</p>
+  </div>
 <% else %>
-  <p>We're contacting you to notify you that your email has been changed to <%= @resource.email %>.</p>
+  <div class="info-box">
+    <p><strong>Email successfully changed:</strong> Your email address has been updated to <strong><%= @resource.email %></strong>.</p>
+  </div>
 <% end %>
+
+<p><strong>Important security information:</strong></p>
+<ul style="color: #4a5568; line-height: 1.6;">
+  <li>All future communications will be sent to your new email address</li>
+  <li>Your login credentials remain the same</li>
+  <li>This change was made from IP address: <%= @resource.current_sign_in_ip || "Unknown" %></li>
+</ul>
+
+<div class="alert-box">
+  <p><strong>Didn't make this change?</strong> If you didn't request this email change, please contact our support team immediately. Your account security may be compromised.</p>
+</div>
+
+<p>If you have any questions about this change, please don't hesitate to contact our support team.</p>

@@ -1,29 +1,114 @@
-<h2>Sign up</h2>
+<% content_for(:title, "Sign Up - eLMo") %>
 
-<%= form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f| %>
-  <%= render "devise/shared/error_messages", resource: resource %>
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full space-y-8">
+    <div>
+      <div class="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-indigo-100">
+        <svg class="h-8 w-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+        </svg>
+      </div>
+      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        Create your account
+      </h2>
+      <p class="mt-2 text-center text-sm text-gray-600">
+        Join <span class="font-semibold text-indigo-600">eLMo</span> and start building your credit
+      </p>
+    </div>
 
-  <div class="field">
-    <%= f.label :email %><br />
-    <%= f.email_field :email, autofocus: true, autocomplete: "email" %>
+    <%= form_with(model: resource, 
+                  as: resource_name, 
+                  url: registration_path(resource_name), 
+                  local: true,
+                  data: { turbo_frame: "registration_form" },
+                  class: "mt-8 space-y-6") do |f| %>
+      
+      <%= render "devise/shared/error_messages", resource: resource %>
+
+      <div class="rounded-md shadow-sm space-y-4">
+        <div>
+          <%= f.label :email, "Email address", class: "block text-sm font-medium text-gray-700" %>
+          <%= f.email_field :email, 
+                            autofocus: true, 
+                            autocomplete: "email",
+                            required: true,
+                            placeholder: "Enter your email address",
+                            aria_describedby: "#{'email-help' unless resource.errors[:email].any?}#{'email-error' if resource.errors[:email].any?}".strip,
+                            class: "mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm #{'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' if resource.errors[:email].any?}" %>
+          <% if resource.errors[:email].any? %>
+            <div id="email-error" class="mt-1 text-sm text-red-600" role="alert">
+              <%= resource.errors[:email].first %>
+            </div>
+          <% else %>
+            <div id="email-help" class="mt-1 text-sm text-gray-500">
+              We'll use this to send you important account notifications.
+            </div>
+          <% end %>
+        </div>
+        
+        <div>
+          <%= f.label :password, "Password", class: "block text-sm font-medium text-gray-700" %>
+          <%= f.password_field :password, 
+                               autocomplete: "new-password",
+                               required: true,
+                               placeholder: "Create a strong password",
+                               aria_describedby: "password-help #{'password-error' if resource.errors[:password].any?}",
+                               class: "mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm #{'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' if resource.errors[:password].any?}" %>
+          <% if resource.errors[:password].any? %>
+            <div id="password-error" class="mt-1 text-sm text-red-600" role="alert">
+              <%= resource.errors[:password].first %>
+            </div>
+          <% else %>
+            <div id="password-help" class="mt-1 text-sm text-gray-500">
+              <% if @minimum_password_length %>
+                Minimum <%= @minimum_password_length %> characters required.
+              <% end %>
+              Include letters, numbers, and special characters for better security.
+            </div>
+          <% end %>
+        </div>
+
+        <div>
+          <%= f.label :password_confirmation, "Confirm password", class: "block text-sm font-medium text-gray-700" %>
+          <%= f.password_field :password_confirmation, 
+                               autocomplete: "new-password",
+                               required: true,
+                               placeholder: "Confirm your password",
+                               aria_describedby: "password-confirmation-error",
+                               class: "mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm #{'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' if resource.errors[:password_confirmation].any?}" %>
+          <% if resource.errors[:password_confirmation].any? %>
+            <div id="password-confirmation-error" class="mt-1 text-sm text-red-600" role="alert">
+              <%= resource.errors[:password_confirmation].first %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="flex items-center">
+        <input type="checkbox" required id="terms-agreement" name="terms_agreement" 
+               class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+        <label for="terms-agreement" class="ml-2 block text-sm text-gray-700">
+          I agree to the 
+          <a href="#" class="text-indigo-600 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:rounded">Terms of Service</a>
+          and 
+          <a href="#" class="text-indigo-600 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:rounded">Privacy Policy</a>
+        </label>
+      </div>
+
+      <div>
+        <%= f.submit "Create account", 
+                     class: "group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed",
+                     data: { disable_with: "Creating account..." } %>
+      </div>
+
+      <div class="text-center">
+        <p class="text-sm text-gray-600">
+          Already have an account?
+          <%= link_to "Sign in here", 
+                      new_session_path(resource_name),
+                      class: "font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:rounded" %>
+        </p>
+      </div>
+    <% end %>
   </div>
-
-  <div class="field">
-    <%= f.label :password %>
-    <% if @minimum_password_length %>
-    <em>(<%= @minimum_password_length %> characters minimum)</em>
-    <% end %><br />
-    <%= f.password_field :password, autocomplete: "new-password" %>
-  </div>
-
-  <div class="field">
-    <%= f.label :password_confirmation %><br />
-    <%= f.password_field :password_confirmation, autocomplete: "new-password" %>
-  </div>
-
-  <div class="actions">
-    <%= f.submit "Sign up" %>
-  </div>
-<% end %>
-
-<%= render "devise/shared/links" %>
+</div>

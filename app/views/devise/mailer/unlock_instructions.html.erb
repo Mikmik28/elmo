@@ -1,7 +1,32 @@
-<p>Hello <%= @resource.email %>!</p>
+<% @email_title = "Unlock your eLMo account" %>
 
-<p>Your account has been locked due to an excessive number of unsuccessful sign in attempts.</p>
+<h2>Account Security Alert</h2>
 
-<p>Click the link below to unlock your account:</p>
+<p>Hello <%= @resource.full_name || @resource.email.split('@').first %>!</p>
 
-<p><%= link_to 'Unlock my account', unlock_url(@resource, unlock_token: @token) %></p>
+<p>Your eLMo account has been temporarily locked due to multiple unsuccessful sign-in attempts. This is a security measure to protect your financial information and personal data.</p>
+
+<div class="info-box">
+  <p><strong>Why was my account locked?</strong> After several failed login attempts, we automatically lock accounts to prevent unauthorized access. This helps protect your sensitive financial information.</p>
+</div>
+
+<p>To unlock your account and regain access, click the button below:</p>
+
+<div style="text-align: center; margin: 30px 0;">
+  <%= link_to 'Unlock My Account', unlock_url(@resource, unlock_token: @token), class: 'cta-button' %>
+</div>
+
+<p>Once unlocked, you'll be able to sign in normally. If you continue to have trouble remembering your password, consider using the "Forgot Password" option to create a new one.</p>
+
+<div class="alert-box">
+  <p><strong>Having trouble?</strong> If the button doesn't work, copy and paste this link into your browser: <%= unlock_url(@resource, unlock_token: @token) %></p>
+</div>
+
+<p><strong>Security tips:</strong></p>
+<ul style="color: #4a5568; line-height: 1.6;">
+  <li>Use a strong, unique password for your eLMo account</li>
+  <li>Consider enabling two-factor authentication for added security</li>
+  <li>Never share your login credentials with anyone</li>
+</ul>
+
+<p>If you didn't attempt to sign in to your account, please contact our support team immediately as your account may be at risk.</p>
